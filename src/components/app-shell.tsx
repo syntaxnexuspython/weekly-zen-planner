@@ -10,7 +10,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   if (!session) return <>{children}</>;
 
-  const isAdmin = session.user.role === "admin";
+  const isAdmin = session.role === "admin";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -36,7 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </>
             )}
             <div className="ml-2 hidden text-sm text-muted-foreground sm:block">
-              {session.user.name}
+              {'User'}
             </div>
             <Button
               variant="ghost"

@@ -11,8 +11,8 @@ export function RequireAuth({ role, children }: { role?: Role; children: ReactNo
     if (loading) return;
     if (!session) {
       router.navigate({ to: "/login" });
-    } else if (role && session.user.role !== role) {
-      router.navigate({ to: session.user.role === "admin" ? "/admin" : "/dashboard" });
+    } else if (role && session.role !== role) {
+      router.navigate({ to: session.role === "admin" ? "/admin" : "/dashboard" });
     }
   }, [session, loading, role, router]);
 
@@ -23,6 +23,6 @@ export function RequireAuth({ role, children }: { role?: Role; children: ReactNo
       </div>
     );
   }
-  if (role && session.user.role !== role) return null;
+  if (role && session.role !== role) return null;
   return <>{children}</>;
 }

@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ function LoginPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (session) router.navigate({ to: session.user.role === "admin" ? "/admin" : "/dashboard" });
+    if (session) router.navigate({ to: session.role === "admin" ? "/admin" : "/dashboard" });
   }, [session, router]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -28,8 +28,9 @@ function LoginPage() {
     setBusy(true);
     try {
       const s = await login(email, password);
-      toast.success(`Welcome, ${s.user.name}`);
-      router.navigate({ to: s.user.role === "admin" ? "/admin" : "/dashboard" });
+      debugger
+      toast.success(`Logged in successfully as`);
+      router.navigate({ to: s.role === "admin" ? "/admin" : "/dashboard" });
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -46,10 +47,6 @@ function LoginPage() {
             <span className="font-semibold">Weekly Planner</span>
           </div>
           <CardTitle>Sign in</CardTitle>
-          <CardDescription>
-            Use a demo account: <code className="rounded bg-muted px-1">user@demo.com</code> or{" "}
-            <code className="rounded bg-muted px-1">admin@demo.com</code> (any password)
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={onSubmit}>
@@ -67,21 +64,25 @@ function LoginPage() {
                 required
               />
             </div>
-            <div className="flex gap-2">
-              <Button type="submit" className="flex-1" disabled={busy}>
-                {busy ? "Signing in…" : "Sign in"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setEmail("admin@demo.com");
-                  setPassword("demo");
-                }}
+            <div className="flex items-center justify-between">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-muted-foreground underline-offset-4 hover:underline"
               >
-                Admin
-              </Button>
+                Forgot password?
+              </Link>
             </div>
+
+            <Button type="submit" className="w-full" disabled={busy}>
+              {busy ? "Signing in…" : "Sign in"}
+            </Button>
+
+            <p className="text-center text-sm text-muted-foreground">
+              Don&apos;t have an account?{" "}
+              <Link to="/register" className="font-medium text-primary underline-offset-4 hover:underline">
+                Create one
+              </Link>
+            </p>
           </form>
         </CardContent>
       </Card>

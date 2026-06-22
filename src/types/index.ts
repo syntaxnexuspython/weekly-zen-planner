@@ -32,6 +32,15 @@ export interface WeeklyStats {
 }
 
 export interface AuthSession {
-  user: User;
-  token: string;
+  role: string;
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+}
+
+export interface ApiResponse<T> {
+  status: string;
+  message: string;
+  data: T;
+
 }

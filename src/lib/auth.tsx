@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { AuthSession } from "@/types";
+import type { ApiResponse, AuthSession } from "@/types";
 import { api } from "./api";
 
 const SESSION_KEY = "weekly_planner_session_v1";
@@ -7,8 +7,15 @@ const SESSION_KEY = "weekly_planner_session_v1";
 interface AuthCtx {
   session: AuthSession | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<AuthSession>;
+  login: (email: string, password: string) => Promise<ApiResponse<AuthSession>>;
   logout: () => void;
+  register: (params: {
+    email: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+    otp: string;
+  }) => Promise<AuthSession>;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -21,12 +28,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
       if (raw) setSession(JSON.parse(raw));
-    } catch {}
+    } catch { }
     setLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
     const s = await api.login(email, password);
+    localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+    setSession(s.data);
+    return s;
+  };
+
+  const register = async (params: {
+    email: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+    otp: string;
+  }) => {
+    const s = await api.register(params);
     localStorage.setItem(SESSION_KEY, JSON.stringify(s));
     setSession(s);
     return s;
@@ -37,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   };
 
-  return <Ctx.Provider value={{ session, loading, login, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ session, loading, login, logout, register }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

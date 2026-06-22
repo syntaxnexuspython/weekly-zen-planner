@@ -1,16 +1,156 @@
-import type { AuthSession, Task, User, WeeklyStats } from "@/types";
+import axios from "axios";
+import type { ApiResponse, AuthSession, Task, User, WeeklyStats } from "@/types";
 import { mockDb } from "./mock-db";
+
+const client = axios.create({
+  baseURL: "http://localhost:8000",
+  headers: {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  },
+});
+
+let authToken = "";
+
+client.interceptors.request.use((config: any) => {
+  if (authToken) {
+    config.headers = config.headers ?? {};
+    config.headers.Authorization = `Bearer ${authToken}`;
+  }
+  return config;
+});
 
 const delay = (ms = 250) => new Promise((r) => setTimeout(r, ms));
 
 export const api = {
-  async login(email: string, _password: string): Promise<AuthSession> {
-    await delay();
-    const db = mockDb.load();
-    const user = db.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    if (!user) throw new Error("Invalid credentials");
-    return { user, token: `mock-${user.id}` };
+  async login(email: string, password: string): Promise<ApiResponse<AuthSession>> {
+    let response;
+
+    try {
+      response = await client.post("/api/v1/auth/login", {
+        email,
+        password,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+
+      throw error;
+    }
+
+    const payload = response.data as ApiResponse<AuthSession>;
+
+    if (payload.status !== 'success') {
+      throw new Error(payload.message || "Invalid credentials");
+    }
+
+    authToken = payload.data.access_token;
+    return payload
   },
+
+  async verifyEmail(email: string, first_name: string): Promise<void> {
+    let response;
+    try {
+      response = await client.post("/api/v1/auth/verify-email", {
+        email,
+        first_name,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+
+    const payload = response.data as { status: string; message: string };
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to send OTP");
+    }
+  },
+
+  async verifyEmailOtp(email: string, otp: string): Promise<void> {
+    let response;
+    try {
+      response = await client.post("/api/v1/auth/verify-email-otp", {
+        email,
+        otp,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+
+    const payload = response.data as { status: string; message: string };
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Invalid OTP");
+    }
+  },
+
+  async register(params: {
+    email: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+    otp: string;
+  }): Promise<AuthSession> {
+    let response;
+    try {
+      response = await client.post("/api/v1/auth/register", {
+        ...params,
+        role: "user",
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+
+    const payload = response.data as {
+      status: string;
+      message: string;
+      data: {
+        access_token: string;
+        refresh_token: string;
+        token_type: string;
+        role: string;
+      };
+    };
+
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Registration failed");
+    }
+
+    authToken = payload.data.access_token;
+    return payload.data as unknown as AuthSession;
+  },
+
+  async forgotPassword(email: string): Promise<void> {
+  let response;
+  try {
+    response = await client.post("/api/v1/auth/forgot-password", {
+      email,
+    });
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const message = (error.response?.data as { message?: string } | undefined)?.message;
+      throw new Error(message || error.message);
+    }
+    throw error;
+  }
+ 
+  const payload = response.data as { status: string; message: string };
+  if (payload.status !== "success") {
+    throw new Error(payload.message || "Failed to send reset link");
+  }
+},
 
   async getUser(id: string): Promise<User> {
     await delay(100);
