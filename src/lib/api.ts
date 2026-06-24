@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { ApiResponse, AuthSession, Task, User, WeeklyStats, Motivation, Reward, UserStreak, StreakDayStatus } from "@/types";
+import type { ApiResponse, AuthSession, Task, User, WeeklyStats, Motivation, Reward, UserStreak, StreakDayStatus, StreakRule } from "@/types";
 import { mockDb } from "./mock-db";
 
 const client = axios.create({
@@ -294,8 +294,21 @@ export const api = {
   },
 
   async listUsers(): Promise<User[]> {
-    await delay(100);
-    return mockDb.load().users;
+    let response;
+    try {
+      response = await client.get("/api/v1/user/admin/users");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<User[]>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to fetch users");
+    }
+    return payload.data;
   },
 
   async listTasks(fromDate?: string, endDate?: string): Promise<Task[]> {
@@ -322,7 +335,7 @@ export const api = {
   async listAllTasks(): Promise<Task[]> {
     let response;
     try {
-      response = await client.get("/api/v1/tasks");
+      response = await client.get("/api/v1/tasks/admin/all");
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const message = (error.response?.data as { message?: string } | undefined)?.message;
@@ -571,6 +584,153 @@ export const api = {
     const payload = response.data as ApiResponse<null>;
     if (payload.status !== "success") {
       throw new Error(payload.message || "Failed to delete reward");
+    }
+  },
+
+  async adminListMotivations(): Promise<Motivation[]> {
+    let response;
+    try {
+      response = await client.get("/api/v1/admin/motivations");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Motivation[]>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to fetch motivations");
+    }
+    return payload.data;
+  },
+
+  async adminCreateMotivation(title: string, content: string, isActive: boolean = true): Promise<Motivation> {
+    let response;
+    try {
+      response = await client.post("/api/v1/admin/motivations", { title, content, is_active: isActive });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Motivation>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to create motivation");
+    }
+    return payload.data;
+  },
+
+  async adminUpdateMotivation(id: string, patch: Partial<Motivation>): Promise<Motivation> {
+    let response;
+    try {
+      const data: Record<string, any> = {};
+      if (patch.title !== undefined) data.title = patch.title;
+      if (patch.content !== undefined) data.content = patch.content;
+      if (patch.is_active !== undefined) data.is_active = patch.is_active;
+
+      response = await client.patch(`/api/v1/admin/motivations/${id}`, data);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Motivation>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to update motivation");
+    }
+    return payload.data;
+  },
+
+  async adminDeleteMotivation(id: string): Promise<void> {
+    let response;
+    try {
+      response = await client.delete(`/api/v1/admin/motivations/${id}`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<null>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to delete motivation");
+    }
+  },
+
+  async adminListStreakRules(): Promise<StreakRule[]> {
+    let response;
+    try {
+      response = await client.get("/api/v1/admin/streak-rules");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<StreakRule[]>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to fetch streak rules");
+    }
+    return payload.data;
+  },
+
+  async adminCreateStreakRule(rule: Omit<StreakRule, "id" | "created_at" | "updated_at">): Promise<StreakRule> {
+    let response;
+    try {
+      response = await client.post("/api/v1/admin/streak-rules", rule);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<StreakRule>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to create streak rule");
+    }
+    return payload.data;
+  },
+
+  async adminUpdateStreakRule(id: string, patch: Partial<StreakRule>): Promise<StreakRule> {
+    let response;
+    try {
+      response = await client.patch(`/api/v1/admin/streak-rules/${id}`, patch);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<StreakRule>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to update streak rule");
+    }
+    return payload.data;
+  },
+
+  async adminDeleteStreakRule(id: string): Promise<void> {
+    let response;
+    try {
+      response = await client.delete(`/api/v1/admin/streak-rules/${id}`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<null>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to delete streak rule");
     }
   },
 

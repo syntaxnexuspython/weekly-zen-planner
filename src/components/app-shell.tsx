@@ -1,4 +1,4 @@
-import { Link, useRouter } from "@tanstack/react-router";
+import { Link, useRouter, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { Calendar, LayoutDashboard, LogOut, Shield, ListTodo, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,14 +11,21 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (!session) return <>{children}</>;
 
   const isAdmin = session.role === "admin";
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2 font-semibold">
+          <div className="flex items-center gap-2 font-semibold cursor-pointer" onClick={() => {
+            if (isAdmin) {
+              navigate({ to: "/admin" })
+            } else {
+              navigate({ to: "/dashboard" })
+            }
+          }} >
             <Calendar className="h-5 w-5 text-primary" />
-            <span>Weekly Planner</span>
+            <span>Zen Planner</span>
           </div>
           <nav className="flex items-center gap-1">
             {isAdmin ? (
@@ -38,9 +45,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link to="/profile" className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent" activeProps={{ className: "bg-accent" }}>
               <User className="h-4 w-4" /> Profile
             </Link>
-            <div className="ml-2 hidden text-sm text-muted-foreground sm:block">
-              {'User'}
-            </div>
             <Button
               variant="ghost"
               size="sm"

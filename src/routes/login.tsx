@@ -28,7 +28,6 @@ function LoginPage() {
     setBusy(true);
     try {
       const s = await login(email, password);
-      debugger
       toast.success(`Logged in successfully as`);
       router.navigate({ to: s.data.role === "admin" ? "/admin" : "/dashboard" });
     } catch (err) {

@@ -11,6 +11,7 @@ export interface User {
 
 export interface Task {
   id: string;
+  userId?: string;
   title: string;
   description?: string;
   date: string; // YYYY-MM-DD
@@ -82,4 +83,15 @@ export interface Reward {
 export interface StreakDayStatus {
   date: string;
   status: "completed" | "freezed" | "missed" | "empty";
+}
+
+export interface StreakRule {
+  id: string;
+  name: string;
+  required_consecutive_days: number;
+  freezes_to_grant: number;
+  max_freezes_allowed: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
