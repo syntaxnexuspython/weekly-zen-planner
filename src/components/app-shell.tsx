@@ -1,6 +1,6 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
-import { Calendar, LayoutDashboard, LogOut, Shield, ListTodo } from "lucide-react";
+import { Calendar, LayoutDashboard, LogOut, Shield, ListTodo, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ReactNode } from "react";
 
@@ -35,6 +35,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </Link>
               </>
             )}
+            <Link to="/profile" className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent" activeProps={{ className: "bg-accent" }}>
+              <User className="h-4 w-4" /> Profile
+            </Link>
             <div className="ml-2 hidden text-sm text-muted-foreground sm:block">
               {'User'}
             </div>

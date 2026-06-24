@@ -26,15 +26,15 @@ export const Route = createFileRoute("/planner")({
 
 function Planner() {
   const { session } = useAuth();
-  const userId = session!.user.id;
+
   const qc = useQueryClient();
 
-  const { data: tasks = [] } = useQuery({
-    queryKey: ["tasks", userId],
-    queryFn: () => api.listTasks(userId),
-  });
-
   const { days, start, end } = useMemo(() => getWeekRange(), []);
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["tasks", ymd(start), ymd(end)],
+    queryFn: () => api.listTasks(ymd(start), ymd(end)),
+  });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
   const [defaultDate, setDefaultDate] = useState<string | undefined>();
@@ -42,20 +42,20 @@ function Planner() {
 
   const create = useMutation({
     mutationFn: (v: TaskFormValues) =>
-      api.createTask({ ...v, userId, status: "pending" }),
+      api.createTask({ ...v, status: "pending" }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["tasks", userId] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
       toast.success("Task created");
     },
   });
   const update = useMutation({
     mutationFn: ({ id, patch }: { id: string; patch: Partial<Task> }) => api.updateTask(id, patch),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks", userId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
   });
   const remove = useMutation({
     mutationFn: (id: string) => api.deleteTask(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["tasks", userId] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
       toast.success("Task deleted");
     },
   });

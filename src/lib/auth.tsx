@@ -27,14 +27,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
-      if (raw) setSession(JSON.parse(raw));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") {
+          // If stored data is a wrapped ApiResponse structure, extract the data
+          if ("status" in parsed && parsed.status === "success" && "data" in parsed) {
+            setSession(parsed.data);
+          } else {
+            setSession(parsed);
+          }
+        }
+      }
     } catch { }
     setLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
     const s = await api.login(email, password);
-    localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+    localStorage.setItem(SESSION_KEY, JSON.stringify(s.data));
     setSession(s.data);
     return s;
   };

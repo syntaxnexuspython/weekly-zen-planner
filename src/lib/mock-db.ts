@@ -32,7 +32,7 @@ function today(offset = 0) {
   return d.toISOString().slice(0, 10);
 }
 
-const seedTasks: Task[] = [
+const seedTasks: any[] = [
   {
     id: "t1", userId: "u_user", title: "Morning workout",
     description: "30 min run", date: today(0), startTime: "07:00", endTime: "07:30",

@@ -57,7 +57,7 @@ function AdminDashboard() {
             </TableHeader>
             <TableBody>
               {users.map((u) => {
-                const userTasks = tasks.filter((t) => t.userId === u.id);
+                const userTasks = tasks.filter((t) => (t as any).userId === u.id);
                 const done = userTasks.filter((t) => t.status === "completed").length;
                 return (
                   <TableRow key={u.id}>
@@ -92,11 +92,11 @@ function AdminDashboard() {
             </TableHeader>
             <TableBody>
               {tasks.slice(-15).reverse().map((t) => {
-                const owner = users.find((u) => u.id === t.userId);
+                const owner = users.find((u) => u.id === (t as any).userId);
                 return (
                   <TableRow key={t.id}>
                     <TableCell className="font-medium">{t.title}</TableCell>
-                    <TableCell className="text-muted-foreground">{owner?.name ?? t.userId}</TableCell>
+                    <TableCell className="text-muted-foreground">{owner?.name ?? (t as any).userId}</TableCell>
                     <TableCell>{t.date}</TableCell>
                     <TableCell><Badge variant="outline">{t.priority}</Badge></TableCell>
                     <TableCell>

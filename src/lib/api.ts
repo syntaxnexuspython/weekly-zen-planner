@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { ApiResponse, AuthSession, Task, User, WeeklyStats } from "@/types";
+import type { ApiResponse, AuthSession, Task, User, WeeklyStats, Motivation, Reward, UserStreak, StreakDayStatus } from "@/types";
 import { mockDb } from "./mock-db";
 
 const client = axios.create({
@@ -10,15 +10,148 @@ const client = axios.create({
   },
 });
 
-let authToken = "";
+// Helper to get session from localStorage
+const getStoredSession = (): AuthSession | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("weekly_planner_session_v1");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") {
+      // Support both wrapped ApiResponse<AuthSession> and raw AuthSession
+      if ("status" in parsed && parsed.status === "success" && "data" in parsed) {
+        return parsed.data;
+      }
+      return parsed;
+    }
+  } catch (e) {
+    console.error("Failed to parse stored session", e);
+  }
+  return null;
+};
+
+let authToken = getStoredSession()?.access_token || "";
 
 client.interceptors.request.use((config: any) => {
-  if (authToken) {
+  const token = getStoredSession()?.access_token || authToken;
+  if (token) {
     config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${authToken}`;
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
+// Flag to track token refresh state
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (err: any) => void;
+}> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token!);
+    }
+  });
+  failedQueue = [];
+};
+
+client.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Check if the error is 401 and not already retried
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      // If the failed request was the refresh request itself, redirect to login
+      if (originalRequest.url === "/api/v1/auth/refresh") {
+        localStorage.removeItem("weekly_planner_session_v1");
+        authToken = "";
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise<string>((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers = originalRequest.headers ?? {};
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return client(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const session = getStoredSession();
+      const refreshToken = session?.refresh_token;
+
+      if (!refreshToken) {
+        localStorage.removeItem("weekly_planner_session_v1");
+        authToken = "";
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        return Promise.reject(error);
+      }
+
+      try {
+        const response = await client.post("/api/v1/auth/refresh", {
+          refresh_token: refreshToken,
+        });
+
+        // The response format from the server is TokenResponse (same as AuthSession)
+        // Handle both wrapped and unwrapped response formats
+        const responseData = response.data;
+        let newSession: AuthSession | null = null;
+
+        if (responseData && typeof responseData === "object") {
+          if ("status" in responseData && responseData.status === "success" && "data" in responseData) {
+            newSession = responseData.data;
+          } else {
+            newSession = responseData as AuthSession;
+          }
+        }
+
+        if (!newSession || !newSession.access_token) {
+          throw new Error("Invalid token refresh response");
+        }
+
+        // Save new session in localStorage
+        localStorage.setItem("weekly_planner_session_v1", JSON.stringify(newSession));
+        authToken = newSession.access_token;
+
+        processQueue(null, newSession.access_token);
+
+        originalRequest.headers = originalRequest.headers ?? {};
+        originalRequest.headers.Authorization = `Bearer ${newSession.access_token}`;
+        return client(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        localStorage.removeItem("weekly_planner_session_v1");
+        authToken = "";
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 const delay = (ms = 250) => new Promise((r) => setTimeout(r, ms));
 
@@ -165,44 +298,280 @@ export const api = {
     return mockDb.load().users;
   },
 
-  async listTasks(userId: string): Promise<Task[]> {
-    await delay(100);
-    return mockDb.load().tasks.filter((t) => t.userId === userId);
+  async listTasks(fromDate?: string, endDate?: string): Promise<Task[]> {
+    let response;
+    try {
+      const params: Record<string, string> = {};
+      if (fromDate) params.from_date = fromDate;
+      if (endDate) params.end_date = endDate;
+      response = await client.get("/api/v1/tasks", { params });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Task[]>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to fetch tasks");
+    }
+    return payload.data;
   },
 
   async listAllTasks(): Promise<Task[]> {
-    await delay(100);
-    return mockDb.load().tasks;
+    let response;
+    try {
+      response = await client.get("/api/v1/tasks");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Task[]>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to fetch all tasks");
+    }
+    return payload.data;
   },
 
   async createTask(task: Omit<Task, "id" | "createdAt">): Promise<Task> {
-    await delay();
-    const db = mockDb.load();
-    const newTask: Task = {
-      ...task,
-      id: `t_${Date.now()}`,
-      createdAt: new Date().toISOString(),
-    };
-    db.tasks.push(newTask);
-    mockDb.save(db);
-    return newTask;
+    let response;
+    try {
+      response = await client.post("/api/v1/tasks", task);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Task>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to create task");
+    }
+    return payload.data;
   },
 
   async updateTask(id: string, patch: Partial<Task>): Promise<Task> {
-    await delay(100);
-    const db = mockDb.load();
-    const idx = db.tasks.findIndex((t) => t.id === id);
-    if (idx === -1) throw new Error("Task not found");
-    db.tasks[idx] = { ...db.tasks[idx], ...patch };
-    mockDb.save(db);
-    return db.tasks[idx];
+    let response;
+    try {
+      response = await client.patch(`/api/v1/tasks/${id}`, patch);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Task>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to update task");
+    }
+    return payload.data;
   },
 
   async deleteTask(id: string): Promise<void> {
-    await delay(100);
-    const db = mockDb.load();
-    db.tasks = db.tasks.filter((t) => t.id !== id);
-    mockDb.save(db);
+    let response;
+    try {
+      response = await client.delete(`/api/v1/tasks/${id}`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<null>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to delete task");
+    }
+  },
+
+  async getRandomMotivation(): Promise<ApiResponse<Motivation>> {
+    let response;
+    try {
+      response = await client.get("/api/v1/motivations/random");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Motivation>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to fetch motivation");
+    }
+    return payload;
+  },
+
+  async getUserProfile(): Promise<any> {
+    let response;
+    try {
+      response = await client.get("/api/v1/user/");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    return response.data;
+  },
+
+  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    let response;
+    try {
+      response = await client.post("/api/v1/user/change-password", {
+        old_password: oldPassword,
+        new_password: newPassword,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<null>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to change password");
+    }
+  },
+
+  async updateNotificationPreferences(emailNotifications: boolean, reminders: boolean): Promise<void> {
+    let response;
+    try {
+      response = await client.patch("/api/v1/user/notification-preference", {
+        email_notifications: emailNotifications,
+        reminders: reminders,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<null>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to update notification preferences");
+    }
+  },
+
+  async getUserStreak(today: string): Promise<UserStreak> {
+    let response;
+    try {
+      response = await client.get("/api/v1/user/streak", {
+        params: { today }
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<UserStreak>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to fetch streak");
+    }
+    return payload.data;
+  },
+
+  async getStreakHistory(startDate?: string, endDate?: string): Promise<StreakDayStatus[]> {
+    let response;
+    try {
+      const params: Record<string, string> = {};
+      if (startDate) params.start_date = startDate;
+      if (endDate) params.end_date = endDate;
+      response = await client.get("/api/v1/user/streak/history", { params });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<StreakDayStatus[]>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to fetch streak history");
+    }
+    return payload.data;
+  },
+
+  async listRewards(): Promise<Reward[]> {
+    let response;
+    try {
+      response = await client.get("/api/v1/rewards");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Reward[]>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to fetch rewards");
+    }
+    return payload.data;
+  },
+
+  async createReward(title: string, description?: string): Promise<Reward> {
+    let response;
+    try {
+      response = await client.post("/api/v1/rewards", { title, description });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Reward>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to create reward");
+    }
+    return payload.data;
+  },
+
+  async selectFavoriteReward(id: string): Promise<Reward> {
+    let response;
+    try {
+      response = await client.post(`/api/v1/rewards/${id}/select`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Reward>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to select favorite reward");
+    }
+    return payload.data;
+  },
+
+  async deleteReward(id: string): Promise<void> {
+    let response;
+    try {
+      response = await client.delete(`/api/v1/rewards/${id}`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<null>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to delete reward");
+    }
   },
 
   computeWeeklyStats(tasks: Task[]): WeeklyStats {

@@ -30,7 +30,7 @@ function LoginPage() {
       const s = await login(email, password);
       debugger
       toast.success(`Logged in successfully as`);
-      router.navigate({ to: s.role === "admin" ? "/admin" : "/dashboard" });
+      router.navigate({ to: s.data.role === "admin" ? "/admin" : "/dashboard" });
     } catch (err) {
       toast.error((err as Error).message);
     } finally {

@@ -11,7 +11,6 @@ export interface User {
 
 export interface Task {
   id: string;
-  userId: string;
   title: string;
   description?: string;
   date: string; // YYYY-MM-DD
@@ -30,17 +29,57 @@ export interface WeeklyStats {
   skipped: number;
   completionPct: number;
 }
-
+export interface BaseUser{
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: Role;
+}
 export interface AuthSession {
   role: string;
   access_token: string;
   refresh_token: string;
   token_type: string;
+  user: BaseUser;
 }
 
 export interface ApiResponse<T> {
   status: string;
   message: string;
   data: T;
+}
 
+export interface Motivation {
+  id: string;
+  title: string;
+  content: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface UserStreak {
+  id: string;
+  user_id: string;
+  current_streak: number;
+  longest_streak: number;
+  available_freezes: number;
+  last_completed_date: string | null;
+  last_rewarded_streak: number;
+  updated_at: string;
+}
+
+export interface Reward {
+  id: string;
+  user_id: string | null;
+  title: string;
+  description: string | null;
+  is_favorite: boolean;
+  is_generic: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StreakDayStatus {
+  date: string;
+  status: "completed" | "freezed" | "missed" | "empty";
 }
