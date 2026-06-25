@@ -3,7 +3,7 @@ import type { ApiResponse, AuthSession, Task, User, WeeklyStats, Motivation, Rew
 import { mockDb } from "./mock-db";
 
 const client = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:8000",
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",
@@ -181,6 +181,32 @@ export const api = {
 
     authToken = payload.data.access_token;
     return payload
+  },
+
+  async loginWithGoogle(credential: string): Promise<ApiResponse<AuthSession>> {
+    let response;
+
+    try {
+      response = await client.post("/api/v1/auth/google", {
+        credential,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+
+      throw error;
+    }
+
+    const payload = response.data as ApiResponse<AuthSession>;
+
+    if (payload.status !== 'success') {
+      throw new Error(payload.message || "Google Sign-In failed");
+    }
+
+    authToken = payload.data.access_token;
+    return payload;
   },
 
   async verifyEmail(email: string, first_name: string): Promise<void> {

@@ -16,7 +16,7 @@ export const Route = createFileRoute("/register")({
 type Step = "details" | "otp";
 
 function RegisterPage() {
-  const { session, register  } = useAuth(); // adjust to however your auth context exposes a setter
+  const { session, register, loginWithGoogle } = useAuth(); // adjust to however your auth context exposes a setter
   const router = useRouter();
 
   const [step, setStep] = useState<Step>("details");
@@ -32,6 +32,47 @@ function RegisterPage() {
   useEffect(() => {
     if (session) router.navigate({ to: session.role === "admin" ? "/admin" : "/dashboard" });
   }, [session, router]);
+
+  useEffect(() => {
+    let interval: any;
+
+    function initGoogle() {
+      const google = (window as any).google;
+      if (google) {
+        clearInterval(interval);
+        google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID",
+          callback: async (response: any) => {
+            setBusy(true);
+            try {
+              const s = await loginWithGoogle(response.credential);
+              toast.success("Account logged in via Google");
+              router.navigate({ to: "/dashboard" });
+            } catch (err) {
+              toast.error((err as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          },
+        });
+        const container = document.getElementById("google-register-btn");
+        if (container) {
+          google.accounts.id.renderButton(container, {
+            theme: "outline",
+            size: "large",
+            width: container.clientWidth || 380,
+          });
+        }
+      }
+    }
+
+    if (step === "details") {
+      initGoogle();
+      interval = setInterval(initGoogle, 500);
+    }
+
+    return () => clearInterval(interval);
+  }, [loginWithGoogle, router, step]);
 
   async function onSubmitDetails(e: React.FormEvent) {
     e.preventDefault();
@@ -163,7 +204,18 @@ function RegisterPage() {
                 {busy ? "Sending OTP…" : "Continue"}
               </Button>
 
-              <p className="text-center text-sm text-muted-foreground">
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Or sign up with</span>
+                </div>
+              </div>
+
+              <div id="google-register-btn" className="w-full flex justify-center min-h-[40px]" />
+
+              <p className="text-center text-sm text-muted-foreground mt-4">
                 Already have an account?{" "}
                 <Link to="/login" className="font-medium text-primary underline-offset-4 hover:underline">
                   Sign in

@@ -8,6 +8,7 @@ interface AuthCtx {
   session: AuthSession | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<ApiResponse<AuthSession>>;
+  loginWithGoogle: (credential: string) => Promise<ApiResponse<AuthSession>>;
   logout: () => void;
   register: (params: {
     email: string;
@@ -49,6 +50,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return s;
   };
 
+  const loginWithGoogle = async (credential: string) => {
+    const s = await api.loginWithGoogle(credential);
+    localStorage.setItem(SESSION_KEY, JSON.stringify(s.data));
+    setSession(s.data);
+    return s;
+  };
+
   const register = async (params: {
     email: string;
     password: string;
@@ -67,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   };
 
-  return <Ctx.Provider value={{ session, loading, login, logout, register }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ session, loading, login, loginWithGoogle, logout, register }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

@@ -13,7 +13,7 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { login, session } = useAuth();
+  const { login, loginWithGoogle, session } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("user@demo.com");
   const [password, setPassword] = useState("demo");
@@ -22,6 +22,49 @@ function LoginPage() {
   useEffect(() => {
     if (session) router.navigate({ to: session.role === "admin" ? "/admin" : "/dashboard" });
   }, [session, router]);
+
+  useEffect(() => {
+    let interval: any;
+
+    function initGoogle() {
+      const google = (window as any).google;
+      const google_id =  import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID"
+
+      console.log("google_id",google_id);
+      
+      if (google) {
+        clearInterval(interval);
+        google.accounts.id.initialize({
+          client_id: google_id,
+          callback: async (response: any) => {
+            setBusy(true);
+            try {
+              const s = await loginWithGoogle(response.credential);
+              toast.success("Logged in successfully via Google");
+              router.navigate({ to: s.data.role === "admin" ? "/admin" : "/dashboard" });
+            } catch (err) {
+              toast.error((err as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          },
+        });
+        const container = document.getElementById("google-login-btn");
+        if (container) {
+          google.accounts.id.renderButton(container, {
+            theme: "outline",
+            size: "large",
+            width: container.clientWidth || 380,
+          });
+        }
+      }
+    }
+
+    initGoogle();
+    interval = setInterval(initGoogle, 500);
+
+    return () => clearInterval(interval);
+  }, [loginWithGoogle, router]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -76,7 +119,18 @@ function LoginPage() {
               {busy ? "Signing in…" : "Sign in"}
             </Button>
 
-            <p className="text-center text-sm text-muted-foreground">
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+              </div>
+            </div>
+
+            <div id="google-login-btn" className="w-full flex justify-center min-h-[40px]" />
+
+            <p className="text-center text-sm text-muted-foreground mt-4">
               Don&apos;t have an account?{" "}
               <Link to="/register" className="font-medium text-primary underline-offset-4 hover:underline">
                 Create one
