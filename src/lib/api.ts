@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { ApiResponse, AuthSession, Task, User, WeeklyStats, Motivation, Reward, UserStreak, StreakDayStatus, StreakRule } from "@/types";
+import type { ApiResponse, AuthSession, Task, User, WeeklyStats, Motivation, Reward, UserStreak, StreakDayStatus, StreakRule, ChatMessage, ChatReply } from "@/types";
 import { mockDb } from "./mock-db";
 
 const client = axios.create({
@@ -758,6 +758,27 @@ export const api = {
     if (payload.status !== "success") {
       throw new Error(payload.message || "Failed to delete streak rule");
     }
+  },
+
+  async chatWithBot(message: string, chatHistory?: ChatMessage[]): Promise<ChatReply> {
+    let response;
+    try {
+      response = await client.post("/api/v1/chatbot/chat", {
+        message,
+        chat_history: chatHistory,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<ChatReply>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to get chatbot reply");
+    }
+    return payload.data;
   },
 
   computeWeeklyStats(tasks: Task[]): WeeklyStats {

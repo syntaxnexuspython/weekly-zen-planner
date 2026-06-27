@@ -3,6 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { Calendar, LayoutDashboard, LogOut, Shield, ListTodo, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ReactNode } from "react";
+import { ChatbotAssistant } from "./chatbot-assistant";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { session, logout } = useAuth();
@@ -59,6 +60,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+      <ChatbotAssistant />
     </div>
   );
 }

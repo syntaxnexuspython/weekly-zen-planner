@@ -95,3 +95,17 @@ export interface StreakRule {
   created_at: string;
   updated_at: string;
 }
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface ChatQuery {
+  message: string;
+  chat_history?: ChatMessage[];
+}
+
+export interface ChatReply {
+  reply: string;
+}
