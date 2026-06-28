@@ -15,8 +15,8 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const { login, loginWithGoogle, session } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState("user@demo.com");
-  const [password, setPassword] = useState("demo");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -85,7 +85,8 @@ function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="mb-2 flex items-center gap-2 text-primary">
-            <Calendar className="h-6 w-6" />
+            {/* <Calendar className="h-6 w-6" /> */}
+            <img src="/logo.png" alt="Zen Planner" className="h-5 w-5" />
             <span className="font-semibold">Weekly Planner</span>
           </div>
           <CardTitle>Sign in</CardTitle>

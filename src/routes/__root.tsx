@@ -80,19 +80,46 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Weekly Zen Planner - Mindful Scheduling & Task Management" },
+      {
+        name: "description",
+        content: "Organize your week with mindfulness. Weekly Zen Planner helps you track tasks, manage your schedule, build habits, and find balance.",
+      },
+      { name: "author", content: "Weekly Zen Planner" },
+      { property: "og:title", content: "Weekly Zen Planner - Mindful Scheduling" },
+      {
+        property: "og:description",
+        content: "Organize your week with mindfulness. Track tasks, manage your schedule, and find balance.",
+      },
+      { property: "og:image", content: "/logo.png" },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Weekly Zen Planner - Mindful Scheduling" },
+      {
+        name: "twitter:description",
+        content: "Organize your week with mindfulness. Track tasks, manage your schedule, and find balance.",
+      },
+      { name: "twitter:image", content: "/logo.png" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
+      },
+      {
+        rel: "icon",
+        type: "image/x-icon",
+        href: "/favicon.ico",
+      },
+      {
+        rel: "shortcut icon",
+        type: "image/x-icon",
+        href: "/favicon.ico",
+      },
+      {
+        rel: "apple-touch-icon",
+        sizes: "180x180",
+        href: "/logo.png",
       },
     ],
   }),
@@ -103,11 +130,38 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Weekly Zen Planner",
+    "alternateName": "Zen Planner",
+    "description": "Organize your week with mindfulness. Weekly Zen Planner helps you track tasks, manage your schedule, build habits, and find balance.",
+    "applicationCategory": "ProductivityApplication",
+    "operatingSystem": "All",
+    "logo": "/logo.png",
+    "image": "/logo.png",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "featureList": [
+      "Weekly scheduling",
+      "Zen task tracking",
+      "Mindful habit planning",
+      "Visual weekly progress"
+    ]
+  };
+
   return (
     <html lang="en">
       <head>
         <HeadContent />
         <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
       <body>
         {children}

@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ymd } from "@/lib/api";
 import type { Task } from "@/types";
 
 export interface TaskFormValues {
@@ -34,7 +35,7 @@ export function TaskFormDialog({
   const [values, setValues] = useState<TaskFormValues>({
     title: "",
     description: "",
-    date: defaultDate ?? new Date().toISOString().slice(0, 10),
+    date: defaultDate ?? ymd(new Date()),
     startTime: "09:00",
     endTime: "10:00",
     priority: "medium",

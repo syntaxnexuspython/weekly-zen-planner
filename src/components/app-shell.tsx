@@ -25,7 +25,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               navigate({ to: "/dashboard" })
             }
           }} >
-            <Calendar className="h-5 w-5 text-primary" />
+            <img src="/logo.png" alt="Zen Planner" className="h-5 w-5" />
+            {/* <Calendar className="h-5 w-5 text-primary" /> */}
             <span>Zen Planner</span>
           </div>
           <nav className="flex items-center gap-1">

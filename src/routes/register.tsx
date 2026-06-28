@@ -135,7 +135,8 @@ function RegisterPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="mb-2 flex items-center gap-2 text-primary">
-            <Calendar className="h-6 w-6" />
+            {/* <Calendar className="h-6 w-6" /> */}
+            <img src="/logo.png" alt="Zen Planner" className="h-5 w-5" />
             <span className="font-semibold">Weekly Planner</span>
           </div>
           <CardTitle>{step === "details" ? "Create account" : "Verify your email"}</CardTitle>
