@@ -20,6 +20,7 @@ export interface Task {
   priority: "high" | "medium" | "low";
   isOptional: boolean;
   status: "pending" | "completed" | "skipped";
+  completionNotes?: string;
   createdAt: string;
 }
 

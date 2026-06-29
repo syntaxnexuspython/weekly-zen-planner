@@ -17,7 +17,9 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PlannerIndexRouteImport } from './routes/planner/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as PlannerDateRouteImport } from './routes/planner/$date'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminRewardsRouteImport } from './routes/admin/rewards'
 import { Route as AdminMotivationsRouteImport } from './routes/admin/motivations'
@@ -62,10 +64,20 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlannerIndexRoute = PlannerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PlannerRoute,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const PlannerDateRoute = PlannerDateRouteImport.update({
+  id: '/$date',
+  path: '/$date',
+  getParentRoute: () => PlannerRoute,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
@@ -89,26 +101,29 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/planner': typeof PlannerRoute
+  '/planner': typeof PlannerRouteWithChildren
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/admin/motivations': typeof AdminMotivationsRoute
   '/admin/rewards': typeof AdminRewardsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/planner/$date': typeof PlannerDateRoute
   '/admin/': typeof AdminIndexRoute
+  '/planner/': typeof PlannerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/planner': typeof PlannerRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/admin/motivations': typeof AdminMotivationsRoute
   '/admin/rewards': typeof AdminRewardsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/planner/$date': typeof PlannerDateRoute
   '/admin': typeof AdminIndexRoute
+  '/planner': typeof PlannerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -117,13 +132,15 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/planner': typeof PlannerRoute
+  '/planner': typeof PlannerRouteWithChildren
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/admin/motivations': typeof AdminMotivationsRoute
   '/admin/rewards': typeof AdminRewardsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/planner/$date': typeof PlannerDateRoute
   '/admin/': typeof AdminIndexRoute
+  '/planner/': typeof PlannerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -139,20 +156,23 @@ export interface FileRouteTypes {
     | '/admin/motivations'
     | '/admin/rewards'
     | '/admin/users'
+    | '/planner/$date'
     | '/admin/'
+    | '/planner/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dashboard'
     | '/forgot-password'
     | '/login'
-    | '/planner'
     | '/profile'
     | '/register'
     | '/admin/motivations'
     | '/admin/rewards'
     | '/admin/users'
+    | '/planner/$date'
     | '/admin'
+    | '/planner'
   id:
     | '__root__'
     | '/'
@@ -166,7 +186,9 @@ export interface FileRouteTypes {
     | '/admin/motivations'
     | '/admin/rewards'
     | '/admin/users'
+    | '/planner/$date'
     | '/admin/'
+    | '/planner/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -175,7 +197,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
-  PlannerRoute: typeof PlannerRoute
+  PlannerRoute: typeof PlannerRouteWithChildren
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
 }
@@ -238,12 +260,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/planner/': {
+      id: '/planner/'
+      path: '/'
+      fullPath: '/planner/'
+      preLoaderRoute: typeof PlannerIndexRouteImport
+      parentRoute: typeof PlannerRoute
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/planner/$date': {
+      id: '/planner/$date'
+      path: '/$date'
+      fullPath: '/planner/$date'
+      preLoaderRoute: typeof PlannerDateRouteImport
+      parentRoute: typeof PlannerRoute
     }
     '/admin/users': {
       id: '/admin/users'
@@ -285,13 +321,26 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface PlannerRouteChildren {
+  PlannerDateRoute: typeof PlannerDateRoute
+  PlannerIndexRoute: typeof PlannerIndexRoute
+}
+
+const PlannerRouteChildren: PlannerRouteChildren = {
+  PlannerDateRoute: PlannerDateRoute,
+  PlannerIndexRoute: PlannerIndexRoute,
+}
+
+const PlannerRouteWithChildren =
+  PlannerRoute._addFileChildren(PlannerRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   DashboardRoute: DashboardRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
-  PlannerRoute: PlannerRoute,
+  PlannerRoute: PlannerRouteWithChildren,
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
 }

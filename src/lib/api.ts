@@ -763,9 +763,16 @@ export const api = {
   async chatWithBot(message: string, chatHistory?: ChatMessage[]): Promise<ChatReply> {
     let response;
     try {
+      const localDate = new Date();
+      const year = localDate.getFullYear();
+      const month = String(localDate.getMonth() + 1).padStart(2, '0');
+      const day = String(localDate.getDate()).padStart(2, '0');
+      const todayStr = `${year}-${month}-${day}`;
+
       response = await client.post("/api/v1/chatbot/chat", {
         message,
         chat_history: chatHistory,
+        current_date: todayStr,
       });
     } catch (error) {
       if (axios.isAxiosError(error)) {

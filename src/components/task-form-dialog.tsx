@@ -17,6 +17,7 @@ export interface TaskFormValues {
   endTime: string;
   priority: Task["priority"];
   isOptional: boolean;
+  completionNotes?: string;
 }
 
 export function TaskFormDialog({
@@ -40,6 +41,7 @@ export function TaskFormDialog({
     endTime: "10:00",
     priority: "medium",
     isOptional: false,
+    completionNotes: "",
   });
   const [busy, setBusy] = useState(false);
 
@@ -53,9 +55,10 @@ export function TaskFormDialog({
         endTime: initial.endTime,
         priority: initial.priority,
         isOptional: initial.isOptional,
+        completionNotes: initial.completionNotes ?? "",
       });
     } else {
-      setValues((v) => ({ ...v, date: defaultDate ?? v.date, title: "", description: "" }));
+      setValues((v) => ({ ...v, date: defaultDate ?? v.date, title: "", description: "", completionNotes: "" }));
     }
   }, [initial, defaultDate, open]);
 
@@ -116,6 +119,17 @@ export function TaskFormDialog({
               <Label htmlFor="opt">Optional</Label>
             </div>
           </div>
+          {initial && (
+            <div className="space-y-2">
+              <Label htmlFor="completionNotes">Completion Notes (Optional)</Label>
+              <Textarea
+                id="completionNotes"
+                placeholder="Write any thoughts, notes or achievements upon completing this task..."
+                value={values.completionNotes || ""}
+                onChange={(e) => setValues({ ...values, completionNotes: e.target.value })}
+              />
+            </div>
+          )}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save"}</Button>
