@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Sparkles, Send, Loader2, Bot, User as UserIcon, RefreshCw, ClipboardList, HelpCircle } from "lucide-react";
+import { Sparkles, Send, Loader2, Bot, User as UserIcon, RefreshCw, ClipboardList, HelpCircle, Mic, MicOff } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import type { ChatMessage } from "@/types";
@@ -25,6 +25,22 @@ const SUGGESTIONS = [
   { label: "Check my streak", text: "What is my current streak status?" },
 ];
 
+// Define interfaces for Web Speech API to prevent TS errors
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message?: string;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+const SpeechRecognitionAPI =
+  typeof window !== "undefined"
+    ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    : null;
+
 export function ChatbotAssistant() {
   const { session } = useAuth();
   const queryClient = useQueryClient();
@@ -33,6 +49,108 @@ export function ChatbotAssistant() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        console.error("Error stopping recognition:", e);
+      }
+    }
+    setIsListening(false);
+  };
+
+  // Clean up speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  // Stop listening when the assistant sheet is closed
+  useEffect(() => {
+    if (!isOpen && isListening) {
+      stopListening();
+    }
+  }, [isOpen, isListening]);
+
+  const startListening = () => {
+    if (!SpeechRecognitionAPI) {
+      toast.error("Speech recognition is not supported in this browser. Please try Chrome or Edge.");
+      return;
+    }
+
+    try {
+      // If there is an active session, stop it first just in case
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+
+      const recognition = new SpeechRecognitionAPI();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        console.error("Speech recognition error:", event.error);
+        if (event.error === "not-allowed") {
+          toast.error("Microphone permission denied. Please allow microphone access in your browser settings.");
+        } else if (event.error === "aborted") {
+          // This can be triggered intentionally when stopping
+        } else {
+          toast.error(`Speech recognition error: ${event.error}`);
+        }
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        let interimTranscript = "";
+        let finalTranscript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const result = event.results[i];
+          if (result.isFinal) {
+            finalTranscript += result[0].transcript;
+          } else {
+            interimTranscript += result[0].transcript;
+          }
+        }
+
+        const transcript = finalTranscript || interimTranscript;
+        if (transcript.trim()) {
+          setInput(transcript);
+        }
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.error("Speech recognition start failed:", err);
+      toast.error("Could not start speech recognition.");
+    }
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
 
   // Load message history from sessionStorage on mount or session change
   useEffect(() => {
@@ -337,15 +455,34 @@ export function ChatbotAssistant() {
               className="flex gap-2 items-center"
             >
               <Input
-                placeholder="Type a message or task update..."
+                placeholder={isListening ? "Listening..." : "Type a message or task update..."}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 disabled={isLoading}
                 className="flex-1 rounded-full border-border/60 bg-background/60 shadow-inner focus-visible:ring-1 focus-visible:ring-indigo-500"
               />
               <Button
+                type="button"
+                onClick={toggleListening}
+                disabled={isLoading}
+                size="icon"
+                variant="ghost"
+                className={`rounded-full shrink-0 cursor-pointer h-10 w-10 transition-all ${
+                  isListening
+                    ? "bg-red-500 hover:bg-red-600 text-white animate-pulse ring-4 ring-red-500/20"
+                    : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border border-border/40"
+                }`}
+                title={isListening ? "Stop listening" : "Speak to type"}
+              >
+                {isListening ? (
+                  <MicOff className="h-4 w-4 animate-bounce" />
+                ) : (
+                  <Mic className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
                 type="submit"
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading || !input.trim() || isListening}
                 size="icon"
                 className="rounded-full shrink-0 cursor-pointer h-10 w-10 bg-primary hover:bg-primary/90 text-white transition-all shadow-md"
               >
