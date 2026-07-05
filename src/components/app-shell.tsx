@@ -2,12 +2,109 @@ import { Link, useRouter, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { Calendar, LayoutDashboard, LogOut, Shield, ListTodo, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { ChatbotAssistant } from "./chatbot-assistant";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import type { Task } from "@/types";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { session, logout } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+
+    const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+    const url = `${baseUrl}/api/v1/tasks/events?token=${encodeURIComponent(session.access_token)}`;
+    const eventSource = new EventSource(url);
+
+    eventSource.onmessage = (event) => {
+      console.log("SSE general message:", event.data);
+    };
+
+    const handleTaskCreated = (event: MessageEvent) => {
+      try {
+        const task: Task = JSON.parse(event.data);
+        console.log("Task created via SSE:", task);
+
+        // Optimistically update active task lists in cache to make UI update instantly
+        queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (oldTasks) => {
+          if (!oldTasks) return oldTasks;
+          if (oldTasks.some((t) => t.id === task.id)) return oldTasks;
+          return [...oldTasks, task].sort((a, b) => a.startTime.localeCompare(b.startTime));
+        });
+
+        // Trigger refetch of tasks and streaks to keep everything perfectly in sync
+        queryClient.invalidateQueries({ queryKey: ["tasks"] });
+        queryClient.invalidateQueries({ queryKey: ["streak"] });
+        queryClient.invalidateQueries({ queryKey: ["streakHistory"] });
+        queryClient.invalidateQueries({ queryKey: ["all-tasks"] });
+
+        toast.success(`Task "${task.title}" created via AI Assistant!`);
+      } catch (err) {
+        console.error("Error processing task_created event:", err);
+      }
+    };
+
+    const handleTaskUpdated = (event: MessageEvent) => {
+      try {
+        const task: Task = JSON.parse(event.data);
+        console.log("Task updated via SSE:", task);
+
+        queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (oldTasks) => {
+          if (!oldTasks) return oldTasks;
+          return oldTasks.map((t) => (t.id === task.id ? task : t));
+        });
+
+        queryClient.invalidateQueries({ queryKey: ["tasks"] });
+        queryClient.invalidateQueries({ queryKey: ["streak"] });
+        queryClient.invalidateQueries({ queryKey: ["streakHistory"] });
+        queryClient.invalidateQueries({ queryKey: ["all-tasks"] });
+
+        toast.success(`Task "${task.title}" updated!`);
+      } catch (err) {
+        console.error("Error processing task_updated event:", err);
+      }
+    };
+
+    const handleTaskDeleted = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log("Task deleted via SSE:", data.id);
+
+        queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (oldTasks) => {
+          if (!oldTasks) return oldTasks;
+          return oldTasks.filter((t) => t.id !== data.id);
+        });
+
+        queryClient.invalidateQueries({ queryKey: ["tasks"] });
+        queryClient.invalidateQueries({ queryKey: ["streak"] });
+        queryClient.invalidateQueries({ queryKey: ["streakHistory"] });
+        queryClient.invalidateQueries({ queryKey: ["all-tasks"] });
+
+        toast.success("Task deleted!");
+      } catch (err) {
+        console.error("Error processing task_deleted event:", err);
+      }
+    };
+
+    eventSource.addEventListener("task_created", handleTaskCreated);
+    eventSource.addEventListener("task_updated", handleTaskUpdated);
+    eventSource.addEventListener("task_deleted", handleTaskDeleted);
+
+    eventSource.onerror = (err) => {
+      console.error("SSE connection error, will reconnect:", err);
+    };
+
+    return () => {
+      eventSource.removeEventListener("task_created", handleTaskCreated);
+      eventSource.removeEventListener("task_updated", handleTaskUpdated);
+      eventSource.removeEventListener("task_deleted", handleTaskDeleted);
+      eventSource.close();
+    };
+  }, [session?.access_token, queryClient]);
 
   if (!session) return <>{children}</>;
 

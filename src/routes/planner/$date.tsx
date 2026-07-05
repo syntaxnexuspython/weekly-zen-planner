@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { RequireAuth } from "@/components/require-auth";
 import { useAuth } from "@/lib/auth";
 import { api, ymd } from "@/lib/api";
@@ -18,6 +18,8 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { TaskFormDialog, type TaskFormValues } from "@/components/task-form-dialog";
 import { toast } from "sonner";
 import type { Task } from "@/types";
@@ -63,6 +65,14 @@ function DayPlanner() {
   const [confirmDelete, setConfirmDelete] = useState<Task | null>(null);
   const [completingTask, setCompletingTask] = useState<Task | null>(null);
   const [completionNotesVal, setCompletionNotesVal] = useState("");
+  const [completedDateVal, setCompletedDateVal] = useState("");
+
+  useEffect(() => {
+    if (completingTask) {
+      setCompletedDateVal(completingTask.date);
+      setCompletionNotesVal("");
+    }
+  }, [completingTask]);
 
   const create = useMutation({
     mutationFn: (v: TaskFormValues) =>
@@ -200,10 +210,19 @@ function DayPlanner() {
                       {t.isOptional && <Badge variant="secondary">optional</Badge>}
                     </div>
 
-                    {t.status === "completed" && t.completionNotes && (
-                      <div className="mt-3 text-sm text-emerald-700 bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/20 italic">
-                        <div className="text-[10px] uppercase font-bold tracking-wider text-emerald-600 mb-1 not-italic">Completion Notes</div>
-                        "{t.completionNotes}"
+                    {t.status === "completed" && (
+                      <div className="mt-3 space-y-2">
+                        {t.completedDate && (
+                          <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                            Completed on: <span className="text-foreground">{t.completedDate}</span>
+                          </div>
+                        )}
+                        {t.completionNotes && (
+                          <div className="text-sm text-emerald-700 bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/20 italic">
+                            <div className="text-[10px] uppercase font-bold tracking-wider text-emerald-600 mb-1 not-italic font-sans">Completion Notes</div>
+                            "{t.completionNotes}"
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -278,7 +297,18 @@ function DayPlanner() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
+              <Label htmlFor="completedDate" className="text-xs font-semibold text-muted-foreground">Completed Date</Label>
+              <Input
+                id="completedDate"
+                type="date"
+                value={completedDateVal}
+                onChange={(e) => setCompletedDateVal(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="completionNotes" className="text-xs font-semibold text-muted-foreground">Completion Notes</Label>
               <Textarea
+                id="completionNotes"
                 placeholder="E.g., Finished successfully, ran 5km, wrote 10 pages..."
                 value={completionNotesVal}
                 onChange={(e) => setCompletionNotesVal(e.target.value)}
@@ -303,7 +333,11 @@ function DayPlanner() {
                   if (completingTask) {
                     update.mutate({
                       id: completingTask.id,
-                      patch: { status: "completed", completionNotes: "" },
+                      patch: {
+                        status: "completed",
+                        completionNotes: "",
+                        completedDate: completedDateVal || completingTask.date,
+                      },
                     });
                   }
                   setCompletingTask(null);
@@ -321,6 +355,7 @@ function DayPlanner() {
                       patch: {
                         status: "completed",
                         completionNotes: completionNotesVal.trim(),
+                        completedDate: completedDateVal || completingTask.date,
                       },
                     });
                   }

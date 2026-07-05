@@ -18,6 +18,7 @@ export interface TaskFormValues {
   priority: Task["priority"];
   isOptional: boolean;
   completionNotes?: string;
+  completedDate?: string;
 }
 
 export function TaskFormDialog({
@@ -42,6 +43,7 @@ export function TaskFormDialog({
     priority: "medium",
     isOptional: false,
     completionNotes: "",
+    completedDate: "",
   });
   const [busy, setBusy] = useState(false);
 
@@ -56,9 +58,10 @@ export function TaskFormDialog({
         priority: initial.priority,
         isOptional: initial.isOptional,
         completionNotes: initial.completionNotes ?? "",
+        completedDate: initial.completedDate ?? "",
       });
     } else {
-      setValues((v) => ({ ...v, date: defaultDate ?? v.date, title: "", description: "", completionNotes: "" }));
+      setValues((v) => ({ ...v, date: defaultDate ?? v.date, title: "", description: "", completionNotes: "", completedDate: "" }));
     }
   }, [initial, defaultDate, open]);
 
@@ -120,14 +123,28 @@ export function TaskFormDialog({
             </div>
           </div>
           {initial && (
-            <div className="space-y-2">
-              <Label htmlFor="completionNotes">Completion Notes (Optional)</Label>
-              <Textarea
-                id="completionNotes"
-                placeholder="Write any thoughts, notes or achievements upon completing this task..."
-                value={values.completionNotes || ""}
-                onChange={(e) => setValues({ ...values, completionNotes: e.target.value })}
-              />
+            <div className="space-y-4 border-t pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="completionNotes">Completion Notes (Optional)</Label>
+                <Textarea
+                  id="completionNotes"
+                  placeholder="Write any thoughts, notes or achievements upon completing this task..."
+                  value={values.completionNotes || ""}
+                  onChange={(e) => setValues({ ...values, completionNotes: e.target.value })}
+                />
+              </div>
+              
+              {initial.status === "completed" && (
+                <div className="space-y-2">
+                  <Label htmlFor="completedDate">Completed Date</Label>
+                  <Input
+                    id="completedDate"
+                    type="date"
+                    value={values.completedDate || ""}
+                    onChange={(e) => setValues({ ...values, completedDate: e.target.value })}
+                  />
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>

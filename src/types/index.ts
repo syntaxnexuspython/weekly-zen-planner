@@ -21,6 +21,7 @@ export interface Task {
   isOptional: boolean;
   status: "pending" | "completed" | "skipped";
   completionNotes?: string;
+  completedDate?: string;
   createdAt: string;
 }
 
