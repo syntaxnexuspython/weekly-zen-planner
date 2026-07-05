@@ -12,6 +12,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { session, logout } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!session?.access_token) return;
@@ -109,7 +110,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (!session) return <>{children}</>;
 
   const isAdmin = session.role === "admin";
-  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
