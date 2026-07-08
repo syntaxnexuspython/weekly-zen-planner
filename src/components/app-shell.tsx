@@ -1,18 +1,32 @@
 import { Link, useRouter, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
-import { Calendar, LayoutDashboard, LogOut, Shield, ListTodo, User } from "lucide-react";
+import { Calendar, LayoutDashboard, LogOut, Shield, ListTodo, User, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect, useState, useMemo } from "react";
 import { ChatbotAssistant } from "./chatbot-assistant";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Task } from "@/types";
+import { api } from "@/lib/api";
+import { PendingTasksSheet } from "./pending-tasks-sheet";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { session, logout } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  const [pendingOpen, setPendingOpen] = useState(false);
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["tasks", "all-pending"],
+    queryFn: () => api.listTasks(),
+    enabled: !!session?.access_token,
+  });
+
+  const pendingCount = useMemo(() => {
+    return tasks.filter((t) => t.status === "pending").length;
+  }, [tasks]);
 
   useEffect(() => {
     if (!session?.access_token) return;
@@ -111,6 +125,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const isAdmin = session.role === "admin";
 
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
@@ -134,15 +149,27 @@ export function AppShell({ children }: { children: ReactNode }) {
             ) : (
               <>
                 <Link to="/dashboard" className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent" activeProps={{ className: "bg-accent" }}>
-                  <LayoutDashboard className="h-4 w-4" /> Dashboard
+                  <LayoutDashboard className="h-4 w-4" /> <span className="hidden md:inline">Dashboard</span>
                 </Link>
                 <Link to="/planner" className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent" activeProps={{ className: "bg-accent" }}>
-                  <ListTodo className="h-4 w-4" /> Planner
+                  <ListTodo className="h-4 w-4" /> <span className="hidden md:inline">Planner</span>
                 </Link>
+                <button
+                  onClick={() => setPendingOpen(true)}
+                  className="relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent cursor-pointer focus:outline-none"
+                >
+                  <Inbox className="h-4 w-4" />
+                  <span className="hidden md:inline">Pending</span>
+                  {pendingCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm animate-pulse">
+                      {pendingCount}
+                    </span>
+                  )}
+                </button>
               </>
             )}
             <Link to="/profile" className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent" activeProps={{ className: "bg-accent" }}>
-              <User className="h-4 w-4" /> Profile
+              <User className="h-4 w-4" /> <span className="hidden md:inline">Profile</span>
             </Link>
             <Button
               variant="ghost"
@@ -159,6 +186,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
       <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
       <ChatbotAssistant />
+      <PendingTasksSheet open={pendingOpen} onOpenChange={setPendingOpen} />
     </div>
   );
 }
