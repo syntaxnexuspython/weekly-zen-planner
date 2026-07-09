@@ -501,6 +501,25 @@ export const api = {
     }
   },
 
+  async updateAuthSettings(allowPasswordLogin: boolean): Promise<void> {
+    let response;
+    try {
+      response = await client.patch("/api/v1/user/auth-settings", {
+        allow_password_login: allowPasswordLogin,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<null>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to update auth settings");
+    }
+  },
+
   async getUserStreak(today: string): Promise<UserStreak> {
     let response;
     try {

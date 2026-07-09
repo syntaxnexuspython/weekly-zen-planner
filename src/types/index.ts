@@ -37,6 +37,9 @@ export interface BaseUser{
   first_name: string;
   last_name: string;
   role: Role;
+  google_id?: string | null;
+  allow_password_login?: boolean;
+  has_password?: boolean;
 }
 export interface AuthSession {
   role: string;
