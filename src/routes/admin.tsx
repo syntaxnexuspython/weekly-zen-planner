@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/require-auth";
-import { Shield, Users, Flame, Sparkles, Menu, X } from "lucide-react";
+import { Shield, Users, Flame, Sparkles, Menu, X, MessageSquare, Megaphone } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -36,6 +36,16 @@ function AdminLayout() {
       to: "/admin/motivations",
       label: "Motivation Quotes",
       icon: <Sparkles className="h-4 w-4 text-sky-500" />,
+    },
+    {
+      to: "/admin/feedback",
+      label: "User Feedback",
+      icon: <MessageSquare className="h-4 w-4 text-rose-500" />,
+    },
+    {
+      to: "/admin/announcements",
+      label: "Announcements",
+      icon: <Megaphone className="h-4 w-4 text-amber-500" />,
     },
   ];
 

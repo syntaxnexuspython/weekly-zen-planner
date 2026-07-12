@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { ApiResponse, AuthSession, Task, User, WeeklyStats, Motivation, Reward, UserStreak, StreakDayStatus, StreakRule, ChatMessage, ChatReply } from "@/types";
+import type { ApiResponse, AuthSession, Task, User, WeeklyStats, Motivation, Reward, UserStreak, StreakDayStatus, StreakRule, ChatMessage, ChatReply, Feedback, FeedbackType, FeedbackStatus, Announcement } from "@/types";
 import { mockDb } from "./mock-db";
 
 const client = axios.create({
@@ -805,6 +805,177 @@ export const api = {
       throw new Error(payload.message || "Failed to get chatbot reply");
     }
     return payload.data;
+  },
+
+  async submitFeedback(type: FeedbackType, title: string, content: string): Promise<Feedback> {
+    let response;
+    try {
+      response = await client.post("/api/v1/feedback", { type, title, content });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Feedback>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to submit feedback");
+    }
+    return payload.data;
+  },
+
+  async adminListFeedback(): Promise<Feedback[]> {
+    let response;
+    try {
+      response = await client.get("/api/v1/feedback/admin");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Feedback[]>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to fetch feedback list");
+    }
+    return payload.data;
+  },
+
+  async adminUpdateFeedbackStatus(id: string, status: FeedbackStatus, adminNotes?: string): Promise<Feedback> {
+    let response;
+    try {
+      response = await client.patch(`/api/v1/feedback/admin/${id}/status`, { status, admin_notes: adminNotes });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Feedback>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to update feedback status");
+    }
+    return payload.data;
+  },
+
+  async adminDeleteFeedback(id: string): Promise<void> {
+    let response;
+    try {
+      response = await client.delete(`/api/v1/feedback/admin/${id}`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<null>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to delete feedback item");
+    }
+  },
+
+  async listActiveAnnouncements(): Promise<Announcement[]> {
+    let response;
+    try {
+      response = await client.get("/api/v1/announcements");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Announcement[]>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to fetch active announcements");
+    }
+    return payload.data;
+  },
+
+  async adminListAnnouncements(): Promise<Announcement[]> {
+    let response;
+    try {
+      response = await client.get("/api/v1/announcements/admin");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Announcement[]>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to fetch all announcements");
+    }
+    return payload.data;
+  },
+
+  async adminCreateAnnouncement(announcement: Omit<Announcement, "id" | "createdAt">): Promise<Announcement> {
+    let response;
+    try {
+      response = await client.post("/api/v1/announcements/admin", {
+        title: announcement.title,
+        description: announcement.description,
+        banner_url: announcement.bannerUrl,
+        is_active: announcement.isActive,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Announcement>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to create announcement");
+    }
+    return payload.data;
+  },
+
+  async adminUpdateAnnouncement(id: string, patch: Partial<Announcement>): Promise<Announcement> {
+    let response;
+    try {
+      const updateData: Record<string, any> = {};
+      if (patch.title !== undefined) updateData.title = patch.title;
+      if (patch.description !== undefined) updateData.description = patch.description;
+      if (patch.bannerUrl !== undefined) updateData.banner_url = patch.bannerUrl;
+      if (patch.isActive !== undefined) updateData.is_active = patch.isActive;
+
+      response = await client.patch(`/api/v1/announcements/admin/${id}`, updateData);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Announcement>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to update announcement");
+    }
+    return payload.data;
+  },
+
+  async adminDeleteAnnouncement(id: string): Promise<void> {
+    let response;
+    try {
+      response = await client.delete(`/api/v1/announcements/admin/${id}`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<null>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to delete announcement");
+    }
   },
 
   computeWeeklyStats(tasks: Task[]): WeeklyStats {

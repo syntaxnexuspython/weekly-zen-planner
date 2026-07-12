@@ -23,6 +23,8 @@ import { Route as PlannerDateRouteImport } from './routes/planner/$date'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminRewardsRouteImport } from './routes/admin/rewards'
 import { Route as AdminMotivationsRouteImport } from './routes/admin/motivations'
+import { Route as AdminFeedbackRouteImport } from './routes/admin/feedback'
+import { Route as AdminAnnouncementsRouteImport } from './routes/admin/announcements'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -94,6 +96,16 @@ const AdminMotivationsRoute = AdminMotivationsRouteImport.update({
   path: '/motivations',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFeedbackRoute = AdminFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAnnouncementsRoute = AdminAnnouncementsRouteImport.update({
+  id: '/announcements',
+  path: '/announcements',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -104,6 +116,8 @@ export interface FileRoutesByFullPath {
   '/planner': typeof PlannerRouteWithChildren
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
+  '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/motivations': typeof AdminMotivationsRoute
   '/admin/rewards': typeof AdminRewardsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -118,6 +132,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
+  '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/motivations': typeof AdminMotivationsRoute
   '/admin/rewards': typeof AdminRewardsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -135,6 +151,8 @@ export interface FileRoutesById {
   '/planner': typeof PlannerRouteWithChildren
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
+  '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/motivations': typeof AdminMotivationsRoute
   '/admin/rewards': typeof AdminRewardsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -153,6 +171,8 @@ export interface FileRouteTypes {
     | '/planner'
     | '/profile'
     | '/register'
+    | '/admin/announcements'
+    | '/admin/feedback'
     | '/admin/motivations'
     | '/admin/rewards'
     | '/admin/users'
@@ -167,6 +187,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/profile'
     | '/register'
+    | '/admin/announcements'
+    | '/admin/feedback'
     | '/admin/motivations'
     | '/admin/rewards'
     | '/admin/users'
@@ -183,6 +205,8 @@ export interface FileRouteTypes {
     | '/planner'
     | '/profile'
     | '/register'
+    | '/admin/announcements'
+    | '/admin/feedback'
     | '/admin/motivations'
     | '/admin/rewards'
     | '/admin/users'
@@ -302,10 +326,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMotivationsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/feedback': {
+      id: '/admin/feedback'
+      path: '/feedback'
+      fullPath: '/admin/feedback'
+      preLoaderRoute: typeof AdminFeedbackRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/announcements': {
+      id: '/admin/announcements'
+      path: '/announcements'
+      fullPath: '/admin/announcements'
+      preLoaderRoute: typeof AdminAnnouncementsRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
+  AdminFeedbackRoute: typeof AdminFeedbackRoute
   AdminMotivationsRoute: typeof AdminMotivationsRoute
   AdminRewardsRoute: typeof AdminRewardsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -313,6 +353,8 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAnnouncementsRoute: AdminAnnouncementsRoute,
+  AdminFeedbackRoute: AdminFeedbackRoute,
   AdminMotivationsRoute: AdminMotivationsRoute,
   AdminRewardsRoute: AdminRewardsRoute,
   AdminUsersRoute: AdminUsersRoute,

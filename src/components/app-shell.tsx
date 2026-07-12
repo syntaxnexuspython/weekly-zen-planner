@@ -1,6 +1,6 @@
 import { Link, useRouter, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
-import { Calendar, LayoutDashboard, LogOut, Shield, ListTodo, User, Inbox } from "lucide-react";
+import { Calendar, LayoutDashboard, LogOut, Shield, ListTodo, User, Inbox, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type ReactNode, useEffect, useState, useMemo } from "react";
 import { ChatbotAssistant } from "./chatbot-assistant";
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import type { Task } from "@/types";
 import { api } from "@/lib/api";
 import { PendingTasksSheet } from "./pending-tasks-sheet";
+import { FeedbackDialog } from "./feedback-dialog";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { session, logout } = useAuth();
@@ -17,6 +18,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   const [pendingOpen, setPendingOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks", "all-pending"],
@@ -168,6 +170,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </button>
               </>
             )}
+            {!isAdmin && (
+              <button
+                onClick={() => setFeedbackOpen(true)}
+                className="relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent cursor-pointer focus:outline-none"
+              >
+                <MessageSquare className="h-4 w-4" />
+                <span className="hidden md:inline">Feedback</span>
+              </button>
+            )}
             <Link to="/profile" className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent" activeProps={{ className: "bg-accent" }}>
               <User className="h-4 w-4" /> <span className="hidden md:inline">Profile</span>
             </Link>
@@ -187,6 +198,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
       <ChatbotAssistant />
       <PendingTasksSheet open={pendingOpen} onOpenChange={setPendingOpen} />
+      <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </div>
   );
 }

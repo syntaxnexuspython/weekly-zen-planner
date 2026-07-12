@@ -114,3 +114,29 @@ export interface ChatQuery {
 export interface ChatReply {
   reply: string;
 }
+
+export type FeedbackType = "contact" | "report" | "suggestion" | "appreciation" | "feedback";
+
+export type FeedbackStatus = "pending" | "in_progress" | "resolved";
+
+export interface Feedback {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  type: FeedbackType;
+  title: string;
+  content: string;
+  status: FeedbackStatus;
+  admin_notes: string | null;
+  createdAt: string;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  description: string;
+  bannerUrl?: string;
+  isActive: boolean;
+  createdAt: string;
+}

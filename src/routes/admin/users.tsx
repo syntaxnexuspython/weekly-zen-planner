@@ -11,7 +11,6 @@ export const Route = createFileRoute("/admin/users")({
 
 function AdminUserManagement() {
   const { data: users = [] } = useQuery({ queryKey: ["users"], queryFn: api.listUsers });
-  const { data: tasks = [] } = useQuery({ queryKey: ["all-tasks"], queryFn: api.listAllTasks });
 
   return (
     <div className="space-y-6">
@@ -29,16 +28,12 @@ function AdminUserManagement() {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead>Tasks Created</TableHead>
-                <TableHead>Tasks Completed</TableHead>
                 <TableHead>Current Streak</TableHead>
                 <TableHead>Freezes Left</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.map((u) => {
-                const userTasks = tasks.filter((t) => t.userId === u.id);
-                const done = userTasks.filter((t) => t.status === "completed").length;
                 return (
                   <TableRow key={u.id}>
                     <TableCell className="font-medium">{u.name}</TableCell>
@@ -46,8 +41,6 @@ function AdminUserManagement() {
                     <TableCell>
                       <Badge variant={u.role === "admin" ? "default" : "secondary"}>{u.role}</Badge>
                     </TableCell>
-                    <TableCell>{userTasks.length}</TableCell>
-                    <TableCell>{done}</TableCell>
                     <TableCell className="font-semibold text-orange-600">{(u.streakCount ?? 0)} 🔥</TableCell>
                     <TableCell>{(u.streakFreezes ?? 0)} ❄️</TableCell>
                   </TableRow>

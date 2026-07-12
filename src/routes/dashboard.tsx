@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   CheckCircle2, Circle, Flame, Snowflake, ListChecks, Clock,
-  Sparkles, Star, TrendingUp,
+  Sparkles, Star, TrendingUp, Megaphone,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Task, Reward, StreakDayStatus } from "@/types";
@@ -238,6 +238,11 @@ function Dashboard() {
     queryFn: () => api.listRewards(),
   });
 
+  const { data: announcements = [] } = useQuery({
+    queryKey: ["active-announcements"],
+    queryFn: api.listActiveAnnouncements,
+  });
+
   const favoriteReward = useMemo(() => {
     return rewards.find((r) => r.is_favorite);
   }, [rewards]);
@@ -310,6 +315,36 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Announcements */}
+      {announcements.length > 0 && (
+        <div className="space-y-4">
+          {announcements.map((ann) => (
+            <Card key={ann.id} className="overflow-hidden border-amber-500/20 bg-amber-500/5 relative hover:shadow-md transition-shadow">
+              {ann.bannerUrl && (
+                <div className="h-32 w-full overflow-hidden relative">
+                  <img src={ann.bannerUrl} alt="" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
+                </div>
+              )}
+              <CardHeader className={ann.bannerUrl ? "pt-2" : ""}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-2 text-amber-600 font-bold text-sm">
+                    <Megaphone className="h-4 w-4 animate-bounce" />
+                    <span>Announcement Alert</span>
+                  </div>
+                </div>
+                <CardTitle className="text-lg font-bold mt-1">{ann.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                  {ann.description}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
       <section className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
