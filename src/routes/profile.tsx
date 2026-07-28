@@ -10,8 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { User, Lock, Bell, Mail, ShieldAlert, BadgeCheck } from "lucide-react";
+import { User, Lock, Bell, Mail, ShieldAlert, BadgeCheck, Trophy, Sparkles, Share2, Copy, Check, Palette } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { getGamificationState, setActiveAvatarBorder, shareStreak, shareAccountabilityInvite, type UserGamificationState } from "@/lib/gamification";
 
 export const Route = createFileRoute("/profile")({
   component: () => (
@@ -38,6 +41,29 @@ function ProfileSettings() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordBusy, setPasswordBusy] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const [gamState, setGamState] = useState<UserGamificationState>(() => getGamificationState());
+
+  useEffect(() => {
+    const handleUpdate = () => setGamState(getGamificationState());
+    window.addEventListener("gamification_updated", handleUpdate);
+    return () => window.removeEventListener("gamification_updated", handleUpdate);
+  }, []);
+
+  const handleSelectBorder = (borderId: string) => {
+    const updated = setActiveAvatarBorder(borderId);
+    setGamState(updated);
+    toast.success("Avatar frame updated!");
+  };
+
+  const handleCopyInviteLink = () => {
+    const text = shareAccountabilityInvite();
+    navigator.clipboard.writeText(text);
+    setCopiedLink(true);
+    toast.success("Accountability Partner invite copied to clipboard!");
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
 
   useEffect(() => {
     if (userProfile) {
@@ -154,21 +180,48 @@ function ProfileSettings() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
-        {/* Left Column: Profile Card */}
+        {/* Left Column: Profile & Gamification Card */}
         <div className="md:col-span-1 space-y-6">
           <Card className="overflow-hidden border border-border bg-gradient-to-b from-card to-background">
             <CardHeader className="flex flex-col items-center pb-6">
-              <Avatar className="h-20 w-20 border-2 border-primary/20 bg-muted mb-4 ring-offset-background ring-2 ring-primary/10">
-                <AvatarFallback className="text-2xl font-semibold text-primary-foreground bg-primary/95">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <CardTitle className="text-lg font-bold text-center mt-2">{fullName}</CardTitle>
+              {/* Avatar with Custom Active Frame */}
+              <div className="relative mb-4">
+                <Avatar className={`h-20 w-20 border-2 bg-muted ring-offset-background ring-2 ${
+                  gamState.activeBorder === "golden_ring"
+                    ? "border-amber-400 ring-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.5)]"
+                    : gamState.activeBorder === "neon_ring"
+                    ? "border-cyan-400 ring-cyan-400/50 shadow-[0_0_15px_rgba(34,211,238,0.5)]"
+                    : gamState.activeBorder === "diamond_frame"
+                    ? "border-indigo-400 ring-indigo-400/50 shadow-[0_0_15px_rgba(99,102,241,0.5)]"
+                    : "border-primary/20 ring-primary/10"
+                }`}>
+                  <AvatarFallback className="text-2xl font-semibold text-primary-foreground bg-primary/95">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute -bottom-2 -right-1 bg-amber-500 text-white rounded-full p-1 shadow-md">
+                  <Trophy className="h-3.5 w-3.5" />
+                </div>
+              </div>
+
+              <CardTitle className="text-lg font-bold text-center">{fullName}</CardTitle>
               <CardDescription className="text-center">{session?.user?.email}</CardDescription>
-              <span className="mt-3 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary capitalize">
-                <BadgeCheck className="h-3.5 w-3.5" />
-                {session?.role || "user"}
-              </span>
+
+              {/* Level & Title Badge */}
+              <div className="mt-3 flex items-center gap-1.5">
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 font-semibold gap-1">
+                  <Sparkles className="h-3 w-3" /> Level {gamState.level}: {gamState.levelTitle}
+                </Badge>
+              </div>
+
+              {/* XP Progress Bar */}
+              <div className="w-full mt-4 space-y-1.5 px-2">
+                <div className="flex justify-between text-xs text-muted-foreground font-medium">
+                  <span>{gamState.xp} Total XP</span>
+                  <span>Next Level: {gamState.level * 500} XP</span>
+                </div>
+                <Progress value={((gamState.xp % 500) / 500) * 100} className="h-2" />
+              </div>
             </CardHeader>
             <CardContent className="border-t pt-4 text-sm space-y-3">
               <div className="flex justify-between py-1">
@@ -185,10 +238,105 @@ function ProfileSettings() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Avatar Border Frame Customizer */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <Palette className="h-4 w-4 text-primary" /> Avatar Frames
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Unlock frames by leveling up your productivity!
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => handleSelectBorder("default")}
+                  className={`p-2 rounded-lg border text-xs font-semibold flex items-center justify-between transition-all ${
+                    gamState.activeBorder === "default" ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent"
+                  }`}
+                >
+                  <span>Default</span>
+                  {gamState.activeBorder === "default" && <Check className="h-3 w-3" />}
+                </button>
+
+                <button
+                  disabled={!gamState.unlockedBorders.includes("golden_ring")}
+                  onClick={() => handleSelectBorder("golden_ring")}
+                  className={`p-2 rounded-lg border text-xs font-semibold flex items-center justify-between transition-all ${
+                    !gamState.unlockedBorders.includes("golden_ring")
+                      ? "opacity-40 cursor-not-allowed"
+                      : gamState.activeBorder === "golden_ring"
+                      ? "border-amber-400 bg-amber-500/10 text-amber-500"
+                      : "hover:bg-accent text-amber-500"
+                  }`}
+                >
+                  <span>Golden (Lvl 3)</span>
+                  {gamState.activeBorder === "golden_ring" && <Check className="h-3 w-3" />}
+                </button>
+
+                <button
+                  disabled={!gamState.unlockedBorders.includes("neon_ring")}
+                  onClick={() => handleSelectBorder("neon_ring")}
+                  className={`p-2 rounded-lg border text-xs font-semibold flex items-center justify-between transition-all ${
+                    !gamState.unlockedBorders.includes("neon_ring")
+                      ? "opacity-40 cursor-not-allowed"
+                      : gamState.activeBorder === "neon_ring"
+                      ? "border-cyan-400 bg-cyan-500/10 text-cyan-500"
+                      : "hover:bg-accent text-cyan-500"
+                  }`}
+                >
+                  <span>Neon (Lvl 5)</span>
+                  {gamState.activeBorder === "neon_ring" && <Check className="h-3 w-3" />}
+                </button>
+
+                <button
+                  disabled={!gamState.unlockedBorders.includes("diamond_frame")}
+                  onClick={() => handleSelectBorder("diamond_frame")}
+                  className={`p-2 rounded-lg border text-xs font-semibold flex items-center justify-between transition-all ${
+                    !gamState.unlockedBorders.includes("diamond_frame")
+                      ? "opacity-40 cursor-not-allowed"
+                      : gamState.activeBorder === "diamond_frame"
+                      ? "border-indigo-400 bg-indigo-500/10 text-indigo-500"
+                      : "hover:bg-accent text-indigo-500"
+                  }`}
+                >
+                  <span>Diamond (Lvl 10)</span>
+                  {gamState.activeBorder === "diamond_frame" && <Check className="h-3 w-3" />}
+                </button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Right Column: Settings & Forms */}
         <div className="md:col-span-2 space-y-6">
+          {/* Accountability Partner & Referral Share */}
+          <Card className="shadow-sm border-primary/20 bg-primary/5">
+            <CardHeader className="flex flex-row items-center gap-3 pb-3">
+              <div className="p-2 rounded-lg bg-primary/20 text-primary">
+                <Share2 className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-bold">Accountability & Referral</CardTitle>
+                <CardDescription>Invite friends to join Zen Planner and keep each other accountable!</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="p-3 rounded-lg border bg-background/80 flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-muted-foreground uppercase">Your Referral Code</div>
+                  <div className="text-base font-mono font-bold tracking-wider text-primary">ZEN-{session?.user?.first_name?.toUpperCase() || "VIP"}2026</div>
+                </div>
+                <Button size="sm" onClick={handleCopyInviteLink} className="gap-1.5 cursor-pointer">
+                  {copiedLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copiedLink ? "Copied!" : "Copy Invite Link"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Notification Preferences */}
           <Card className="shadow-sm">
             <CardHeader className="flex flex-row items-center gap-3">

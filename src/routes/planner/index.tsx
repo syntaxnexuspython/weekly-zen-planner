@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Plus, Trash2, Pencil, CheckCircle2, Circle, SkipForward, Clock,
-  ChevronLeft, ChevronRight, Calendar as CalendarIcon
+  ChevronLeft, ChevronRight, Calendar as CalendarIcon, Sparkles, Repeat, Link as LinkIcon, CheckSquare
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { TaskFormDialog, type TaskFormValues } from "@/components/task-form-dialog";
+import { ZenFocusModal } from "@/components/zen-focus-modal";
 import { toast } from "sonner";
 import type { Task } from "@/types";
 
@@ -82,6 +83,7 @@ function Planner() {
   const [completingTask, setCompletingTask] = useState<Task | null>(null);
   const [completionNotesVal, setCompletionNotesVal] = useState("");
   const [completedDateVal, setCompletedDateVal] = useState("");
+  const [focusTask, setFocusTask] = useState<Task | null>(null);
 
   useEffect(() => {
     if (completingTask) {
@@ -251,6 +253,22 @@ function Planner() {
                           {t.startTime}–{t.endTime}
                           <Badge variant="outline" className={priColor[t.priority]}>{t.priority}</Badge>
                           {t.isOptional && <Badge variant="secondary">optional</Badge>}
+                          {t.recurrence && t.recurrence !== "none" && (
+                            <Badge variant="outline" className="gap-1 text-[10px] bg-primary/5 text-primary border-primary/20">
+                              <Repeat className="h-2.5 w-2.5" /> {t.recurrence}
+                            </Badge>
+                          )}
+                          {t.subtasks && t.subtasks.length > 0 && (
+                            <Badge variant="secondary" className="gap-1 text-[10px]">
+                              <CheckSquare className="h-2.5 w-2.5" />
+                              {t.subtasks.filter((s) => s.completed).length}/{t.subtasks.length}
+                            </Badge>
+                          )}
+                          {t.attachments && t.attachments.length > 0 && (
+                            <Badge variant="outline" className="gap-1 text-[10px]">
+                              <LinkIcon className="h-2.5 w-2.5" /> {t.attachments.length}
+                            </Badge>
+                          )}
                         </div>
                         {t.status === "completed" && (
                           <div className="mt-1.5 space-y-1">
@@ -268,6 +286,15 @@ function Planner() {
                         )}
                       </div>
                       <div className="flex flex-col gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        {t.status === "pending" && (
+                          <button
+                            onClick={() => setFocusTask(t)}
+                            title="Start Zen Focus Session"
+                            className="p-1 rounded hover:bg-primary/10 text-primary transition-colors"
+                          >
+                            <Sparkles className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                         <button onClick={() => { setEditing(t); setDefaultDate(undefined); setOpen(true); }} title="Edit">
                           <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
                         </button>
@@ -277,12 +304,20 @@ function Planner() {
                       </div>
                     </div>
                     {t.status !== "skipped" && t.status !== "completed" && (
-                      <button
-                        className="mt-2 text-[10px] uppercase tracking-wide text-muted-foreground hover:text-foreground"
-                        onClick={() => update.mutate({ id: t.id, patch: { status: "skipped" } })}
-                      >
-                        Skip
-                      </button>
+                      <div className="mt-2 flex items-center justify-between">
+                        <button
+                          className="text-[10px] uppercase tracking-wide text-muted-foreground hover:text-foreground"
+                          onClick={() => update.mutate({ id: t.id, patch: { status: "skipped" } })}
+                        >
+                          Skip
+                        </button>
+                        <button
+                          className="text-[10px] font-semibold text-primary hover:underline flex items-center gap-1"
+                          onClick={() => setFocusTask(t)}
+                        >
+                          <Sparkles className="h-3 w-3" /> Focus Mode
+                        </button>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -415,6 +450,22 @@ function Planner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ZenFocusModal
+        open={!!focusTask}
+        onOpenChange={(o) => !o && setFocusTask(null)}
+        task={focusTask}
+        onCompleteTask={(updatedTask) => {
+          update.mutate({
+            id: updatedTask.id,
+            patch: {
+              status: "completed",
+              subtasks: updatedTask.subtasks,
+              completedDate: ymd(new Date()),
+            },
+          });
+        }}
+      />
     </div>
   );
 }

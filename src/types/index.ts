@@ -9,6 +9,21 @@ export interface User {
   streakFreezes: number;
 }
 
+export interface Subtask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+export type RecurrencePattern = "none" | "daily" | "weekly" | "biweekly" | "monthly";
+
+export interface TaskAttachment {
+  id: string;
+  type: "image" | "link";
+  url: string;
+  name?: string;
+}
+
 export interface Task {
   id: string;
   userId?: string;
@@ -23,6 +38,11 @@ export interface Task {
   completionNotes?: string;
   completedDate?: string;
   createdAt: string;
+  subtasks?: Subtask[];
+  recurrence?: RecurrencePattern;
+  attachments?: TaskAttachment[];
+  calendarEventId?: string;
+  isSyncedToCalendar?: boolean;
 }
 
 export interface WeeklyStats {

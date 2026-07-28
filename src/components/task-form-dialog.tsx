@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ymd } from "@/lib/api";
-import type { Task } from "@/types";
+import type { Task, Subtask, RecurrencePattern, TaskAttachment } from "@/types";
+import { Plus, Trash2, Link as LinkIcon, Calendar, Repeat } from "lucide-react";
 
 export interface TaskFormValues {
   title: string;
@@ -19,6 +20,9 @@ export interface TaskFormValues {
   isOptional: boolean;
   completionNotes?: string;
   completedDate?: string;
+  subtasks?: Subtask[];
+  recurrence?: RecurrencePattern;
+  attachments?: TaskAttachment[];
 }
 
 export function TaskFormDialog({
@@ -44,7 +48,14 @@ export function TaskFormDialog({
     isOptional: false,
     completionNotes: "",
     completedDate: "",
+    subtasks: [],
+    recurrence: "none",
+    attachments: [],
   });
+
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkName, setLinkName] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -59,11 +70,92 @@ export function TaskFormDialog({
         isOptional: initial.isOptional,
         completionNotes: initial.completionNotes ?? "",
         completedDate: initial.completedDate ?? "",
+        subtasks: initial.subtasks ? [...initial.subtasks] : [],
+        recurrence: initial.recurrence ?? "none",
+        attachments: initial.attachments ? [...initial.attachments] : [],
       });
     } else {
-      setValues((v) => ({ ...v, date: defaultDate ?? v.date, title: "", description: "", completionNotes: "", completedDate: "" }));
+      setValues((v) => ({
+        ...v,
+        date: defaultDate ?? v.date,
+        title: "",
+        description: "",
+        completionNotes: "",
+        completedDate: "",
+        subtasks: [],
+        recurrence: "none",
+        attachments: [],
+      }));
     }
   }, [initial, defaultDate, open]);
+
+  const handleAddSubtask = () => {
+    if (!newSubtaskTitle.trim()) return;
+    const newSubtask: Subtask = {
+      id: Math.random().toString(36).substring(2, 9),
+      title: newSubtaskTitle.trim(),
+      completed: false,
+    };
+    setValues((prev) => ({
+      ...prev,
+      subtasks: [...(prev.subtasks || []), newSubtask],
+    }));
+    setNewSubtaskTitle("");
+  };
+
+  const handleRemoveSubtask = (id: string) => {
+    setValues((prev) => ({
+      ...prev,
+      subtasks: (prev.subtasks || []).filter((s) => s.id !== id),
+    }));
+  };
+
+  const handleAddAttachment = () => {
+    if (!linkUrl.trim()) return;
+    const newAttachment: TaskAttachment = {
+      id: Math.random().toString(36).substring(2, 9),
+      type: "link",
+      url: linkUrl.trim(),
+      name: linkName.trim() || linkUrl.trim(),
+    };
+    setValues((prev) => ({
+      ...prev,
+      attachments: [...(prev.attachments || []), newAttachment],
+    }));
+    setLinkUrl("");
+    setLinkName("");
+  };
+
+  const handleRemoveAttachment = (id: string) => {
+    setValues((prev) => ({
+      ...prev,
+      attachments: (prev.attachments || []).filter((a) => a.id !== id),
+    }));
+  };
+
+  const handleExportICal = () => {
+    const icsData = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Zen Planner//Task Event//EN",
+      "BEGIN:VEVENT",
+      `SUMMARY:${values.title}`,
+      `DESCRIPTION:${values.description || ""}`,
+      `DTSTART:${values.date.replace(/-/g, "")}T${values.startTime.replace(":", "")}00Z`,
+      `DTEND:${values.date.replace(/-/g, "")}T${values.endTime.replace(":", "")}00Z`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\n");
+
+    const blob = new Blob([icsData], { type: "text/calendar;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${values.title.replace(/\s+/g, "_")}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -78,9 +170,16 @@ export function TaskFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{initial ? "Edit task" : "New task"}</DialogTitle>
+          <DialogTitle className="flex items-center justify-between">
+            <span>{initial ? "Edit task" : "New task"}</span>
+            {initial && (
+              <Button type="button" variant="outline" size="sm" onClick={handleExportICal} className="gap-1 text-xs">
+                <Calendar className="h-3.5 w-3.5" /> Export .ics
+              </Button>
+            )}
+          </DialogTitle>
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
@@ -91,6 +190,7 @@ export function TaskFormDialog({
             <Label htmlFor="desc">Description</Label>
             <Textarea id="desc" value={values.description} onChange={(e) => setValues({ ...values, description: e.target.value })} />
           </div>
+
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-2">
               <Label>Date</Label>
@@ -105,6 +205,7 @@ export function TaskFormDialog({
               <Input type="time" value={values.endTime} onChange={(e) => setValues({ ...values, endTime: e.target.value })} />
             </div>
           </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Priority</Label>
@@ -117,13 +218,89 @@ export function TaskFormDialog({
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-end gap-2">
-              <Switch checked={values.isOptional} onCheckedChange={(v) => setValues({ ...values, isOptional: v })} id="opt" />
-              <Label htmlFor="opt">Optional</Label>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                <Repeat className="h-3.5 w-3.5" /> Recurrence
+              </Label>
+              <Select value={values.recurrence} onValueChange={(v) => setValues({ ...values, recurrence: v as RecurrencePattern })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Recurrence</SelectItem>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="biweekly">Bi-Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            <Switch checked={values.isOptional} onCheckedChange={(v) => setValues({ ...values, isOptional: v })} id="opt" />
+            <Label htmlFor="opt">Optional Task</Label>
+          </div>
+
+          {/* Subtasks Section */}
+          <div className="space-y-2 border-t pt-3 border-border/60">
+            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Subtasks Checklist</Label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Add subtask title..."
+                value={newSubtaskTitle}
+                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddSubtask();
+                  }
+                }}
+              />
+              <Button type="button" size="icon" variant="secondary" onClick={handleAddSubtask}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            {values.subtasks && values.subtasks.length > 0 && (
+              <div className="space-y-1.5 mt-2">
+                {values.subtasks.map((st) => (
+                  <div key={st.id} className="flex items-center justify-between p-2 rounded border bg-accent/20 text-xs">
+                    <span>{st.title}</span>
+                    <Button type="button" size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => handleRemoveSubtask(st.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Attachments Section */}
+          <div className="space-y-2 border-t pt-3 border-border/60">
+            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Attachments & Links</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Input placeholder="Link Name (Optional)" value={linkName} onChange={(e) => setLinkName(e.target.value)} />
+              <Input placeholder="URL (e.g. https://...)" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={handleAddAttachment} className="w-full gap-1.5 text-xs">
+              <LinkIcon className="h-3.5 w-3.5" /> Add Attachment Link
+            </Button>
+            {values.attachments && values.attachments.length > 0 && (
+              <div className="space-y-1.5 mt-2">
+                {values.attachments.map((att) => (
+                  <div key={att.id} className="flex items-center justify-between p-2 rounded border bg-accent/20 text-xs">
+                    <a href={att.url} target="_blank" rel="noreferrer" className="text-primary underline truncate max-w-[300px]">
+                      {att.name || att.url}
+                    </a>
+                    <Button type="button" size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => handleRemoveAttachment(att.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {initial && (
-            <div className="space-y-4 border-t pt-4">
+            <div className="space-y-4 border-t pt-4 border-border/60">
               <div className="space-y-2">
                 <Label htmlFor="completionNotes">Completion Notes (Optional)</Label>
                 <Textarea
@@ -133,7 +310,7 @@ export function TaskFormDialog({
                   onChange={(e) => setValues({ ...values, completionNotes: e.target.value })}
                 />
               </div>
-              
+
               {initial.status === "completed" && (
                 <div className="space-y-2">
                   <Label htmlFor="completedDate">Completed Date</Label>
@@ -147,6 +324,7 @@ export function TaskFormDialog({
               )}
             </div>
           )}
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save"}</Button>

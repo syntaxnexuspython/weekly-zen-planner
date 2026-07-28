@@ -20,8 +20,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   CheckCircle2, Circle, Flame, Snowflake, ListChecks, Clock,
-  Sparkles, Star, TrendingUp, Megaphone,
+  Sparkles, Star, TrendingUp, Megaphone, Volume2, VolumeX, CheckSquare, Repeat
 } from "lucide-react";
+import { ZenFocusModal } from "@/components/zen-focus-modal";
 import { toast } from "sonner";
 import type { Task, Reward, StreakDayStatus } from "@/types";
 
@@ -258,6 +259,45 @@ function Dashboard() {
 
   const [motivation, setMotivation] = useState<string | null>(null);
   const [isLoadingMotivation, setIsLoadingMotivation] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [focusTask, setFocusTask] = useState<Task | null>(null);
+
+  function handleSpeakBriefing() {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      toast.error("Text-to-speech is not supported in your browser.");
+      return;
+    }
+
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    const name = session?.user?.first_name || "there";
+    const pendingCount = todays.filter((t) => t.status === "pending").length;
+    const completedCount = todays.filter((t) => t.status === "completed").length;
+
+    let text = `Good day ${name}! Here is your Zen briefing for today. You have ${todays.length} scheduled tasks: ${completedCount} completed, and ${pendingCount} pending. `;
+
+    if (pendingCount > 0) {
+      text += "Your pending tasks include: " + todays.filter((t) => t.status === "pending").slice(0, 3).map((t) => t.title).join(", ") + ". ";
+    } else {
+      text += "All your tasks for today are completed! Great job! ";
+    }
+
+    if (motivation) {
+      text += `Here is your daily motivation: ${motivation}`;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
+  }
 
   async function handleMotivate() {
     setIsLoadingMotivation(true);
@@ -354,10 +394,27 @@ function Dashboard() {
             {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })} · Week of {weekRangeLabel}
           </p>
         </div>
-        <Button onClick={handleMotivate} variant="outline" disabled={isLoadingMotivation}>
-          <Sparkles className="mr-2 h-4 w-4" />
-          {isLoadingMotivation ? "Loading..." : "Motivate me"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            onClick={handleSpeakBriefing}
+            variant={isSpeaking ? "secondary" : "outline"}
+            className={isSpeaking ? "border-primary text-primary animate-pulse" : ""}
+          >
+            {isSpeaking ? (
+              <>
+                <VolumeX className="mr-2 h-4 w-4 text-primary" /> Stop Briefing
+              </>
+            ) : (
+              <>
+                <Volume2 className="mr-2 h-4 w-4 text-primary" /> Audio Briefing
+              </>
+            )}
+          </Button>
+          <Button onClick={handleMotivate} variant="outline" disabled={isLoadingMotivation}>
+            <Sparkles className="mr-2 h-4 w-4 text-amber-500" />
+            {isLoadingMotivation ? "Loading..." : "Motivate me"}
+          </Button>
+        </div>
       </section>
 
       {motivation && (
@@ -542,10 +599,19 @@ function Dashboard() {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-3">
-        <TaskList title="Today's tasks" tasks={todays} onToggle={toggle} empty="Nothing scheduled today." />
-        <TaskList title="Priority" tasks={priority} onToggle={toggle} empty="No high-priority tasks." />
-        <TaskList title="Optional" tasks={optional} onToggle={toggle} empty="No optional tasks." />
+        <TaskList title="Today's tasks" tasks={todays} onToggle={toggle} onStartFocus={setFocusTask} empty="Nothing scheduled today." />
+        <TaskList title="Priority" tasks={priority} onToggle={toggle} onStartFocus={setFocusTask} empty="No high-priority tasks." />
+        <TaskList title="Optional" tasks={optional} onToggle={toggle} onStartFocus={setFocusTask} empty="No optional tasks." />
       </section>
+
+      <ZenFocusModal
+        open={!!focusTask}
+        onOpenChange={(o) => !o && setFocusTask(null)}
+        task={focusTask}
+        onCompleteTask={(updatedTask) => {
+          toggle(updatedTask);
+        }}
+      />
     </div>
   );
 }
@@ -565,8 +631,8 @@ function StatCard({ label, value, icon }: { label: string; value: React.ReactNod
 }
 
 function TaskList({
-  title, tasks, onToggle, empty,
-}: { title: string; tasks: Task[]; onToggle: (t: Task) => void; empty: string }) {
+  title, tasks, onToggle, onStartFocus, empty,
+}: { title: string; tasks: Task[]; onToggle: (t: Task) => void; onStartFocus: (t: Task) => void; empty: string }) {
   const priColor: Record<Task["priority"], string> = {
     high: "bg-red-500/10 text-red-600 border-red-500/20",
     medium: "bg-amber-500/10 text-amber-600 border-amber-500/20",
@@ -579,7 +645,7 @@ function TaskList({
         {tasks.length === 0 ? (
           <p className="text-sm text-muted-foreground">{empty}</p>
         ) : tasks.map((t) => (
-          <div key={t.id} className="flex items-start gap-3 rounded-lg border p-3 hover:bg-accent/40">
+          <div key={t.id} className="flex items-start gap-3 rounded-lg border p-3 hover:bg-accent/40 group">
             <button onClick={() => onToggle(t)} className="mt-0.5">
               {t.status === "completed"
                 ? <CheckCircle2 className="h-5 w-5 text-emerald-500" />
@@ -589,13 +655,33 @@ function TaskList({
               <div className={`text-sm font-medium ${t.status === "completed" ? "line-through text-muted-foreground" : ""}`}>
                 {t.title}
               </div>
-              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground mt-1">
                 <Clock className="h-3 w-3" />
                 {t.startTime}–{t.endTime}
                 <Badge variant="outline" className={priColor[t.priority]}>{t.priority}</Badge>
                 {t.isOptional && <Badge variant="secondary">optional</Badge>}
+                {t.recurrence && t.recurrence !== "none" && (
+                  <Badge variant="outline" className="gap-1 text-[10px] bg-primary/5 text-primary border-primary/20">
+                    <Repeat className="h-2.5 w-2.5" /> {t.recurrence}
+                  </Badge>
+                )}
+                {t.subtasks && t.subtasks.length > 0 && (
+                  <Badge variant="secondary" className="gap-1 text-[10px]">
+                    <CheckSquare className="h-2.5 w-2.5" />
+                    {t.subtasks.filter((s) => s.completed).length}/{t.subtasks.length}
+                  </Badge>
+                )}
               </div>
             </div>
+            {t.status === "pending" && (
+              <button
+                onClick={() => onStartFocus(t)}
+                title="Start Zen Focus"
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-primary/10 text-primary text-xs flex items-center gap-1 font-medium"
+              >
+                <Sparkles className="h-3.5 w-3.5" /> Focus
+              </button>
+            )}
           </div>
         ))}
       </CardContent>

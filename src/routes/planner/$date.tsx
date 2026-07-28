@@ -12,7 +12,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Plus, Trash2, Pencil, CheckCircle2, Circle, SkipForward, Clock, ArrowLeft
+  Plus, Trash2, Pencil, CheckCircle2, Circle, SkipForward, Clock, ArrowLeft, Sparkles, Repeat, Link as LinkIcon, CheckSquare
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter
@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { TaskFormDialog, type TaskFormValues } from "@/components/task-form-dialog";
+import { ZenFocusModal } from "@/components/zen-focus-modal";
 import { toast } from "sonner";
 import type { Task } from "@/types";
 
@@ -66,6 +67,7 @@ function DayPlanner() {
   const [completingTask, setCompletingTask] = useState<Task | null>(null);
   const [completionNotesVal, setCompletionNotesVal] = useState("");
   const [completedDateVal, setCompletedDateVal] = useState("");
+  const [focusTask, setFocusTask] = useState<Task | null>(null);
 
   useEffect(() => {
     if (completingTask) {
@@ -208,7 +210,34 @@ function DayPlanner() {
                         {t.priority} priority
                       </Badge>
                       {t.isOptional && <Badge variant="secondary">optional</Badge>}
+                      {t.recurrence && t.recurrence !== "none" && (
+                        <Badge variant="outline" className="gap-1 bg-primary/5 text-primary border-primary/20">
+                          <Repeat className="h-3 w-3" /> {t.recurrence}
+                        </Badge>
+                      )}
+                      {t.subtasks && t.subtasks.length > 0 && (
+                        <Badge variant="secondary" className="gap-1">
+                          <CheckSquare className="h-3 w-3" />
+                          Subtasks {t.subtasks.filter((s) => s.completed).length}/{t.subtasks.length}
+                        </Badge>
+                      )}
                     </div>
+
+                    {t.attachments && t.attachments.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {t.attachments.map((att) => (
+                          <a
+                            key={att.id}
+                            href={att.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline bg-primary/5 px-2 py-1 rounded border border-primary/10"
+                          >
+                            <LinkIcon className="h-3 w-3" /> {att.name || att.url}
+                          </a>
+                        ))}
+                      </div>
+                    )}
 
                     {t.status === "completed" && (
                       <div className="mt-3 space-y-2">
@@ -218,9 +247,8 @@ function DayPlanner() {
                           </div>
                         )}
                         {t.completionNotes && (
-                          <div className="text-sm text-emerald-700 bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/20 italic">
-                            <div className="text-[10px] uppercase font-bold tracking-wider text-emerald-600 mb-1 not-italic font-sans">Completion Notes</div>
-                            "{t.completionNotes}"
+                          <div className="text-xs text-emerald-700 bg-emerald-500/10 rounded-md p-2.5 border border-emerald-500/20 italic">
+                            Completion Note: {t.completionNotes}
                           </div>
                         )}
                       </div>
@@ -228,24 +256,32 @@ function DayPlanner() {
                   </div>
                 </div>
 
-                <div className="flex gap-1 shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
+                  {t.status === "pending" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFocusTask(t)}
+                      className="gap-1 text-xs border-primary/30 text-primary hover:bg-primary/10"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" /> Focus
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 cursor-pointer"
                     onClick={() => { setEditing(t); setDefaultDate(undefined); setOpen(true); }}
-                    title="Edit"
                   >
-                    <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                    <Pencil className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 cursor-pointer hover:bg-destructive/10"
+                    className="h-8 w-8 text-destructive cursor-pointer"
                     onClick={() => setConfirmDelete(t)}
-                    title="Delete"
                   >
-                    <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </CardContent>
@@ -368,6 +404,22 @@ function DayPlanner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ZenFocusModal
+        open={!!focusTask}
+        onOpenChange={(o) => !o && setFocusTask(null)}
+        task={focusTask}
+        onCompleteTask={(updatedTask) => {
+          update.mutate({
+            id: updatedTask.id,
+            patch: {
+              status: "completed",
+              subtasks: updatedTask.subtasks,
+              completedDate: ymd(new Date()),
+            },
+          });
+        }}
+      />
     </div>
   );
 }
