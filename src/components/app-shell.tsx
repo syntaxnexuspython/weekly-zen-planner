@@ -10,6 +10,7 @@ import type { Task } from "@/types";
 import { api } from "@/lib/api";
 import { PendingTasksSheet } from "./pending-tasks-sheet";
 import { FeedbackDialog } from "./feedback-dialog";
+import { ThemeToggle } from "./theme-toggle";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { session, logout } = useAuth();
@@ -182,6 +183,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link to="/profile" className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent" activeProps={{ className: "bg-accent" }}>
               <User className="h-4 w-4" /> <span className="hidden md:inline">Profile</span>
             </Link>
+            <ThemeToggle />
             <Button
               variant="ghost"
               size="sm"
