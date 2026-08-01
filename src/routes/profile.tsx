@@ -57,13 +57,25 @@ function ProfileSettings() {
     toast.success("Avatar frame updated!");
   };
 
+  const [copiedCodeOnly, setCopiedCodeOnly] = useState(false);
+
+  const referralCode = `ZEN-${session?.user?.first_name?.toUpperCase().replace(/[^A-Z0-9]/g, "") || "VIP"}2026`;
+
   const handleCopyInviteLink = () => {
-    const text = shareAccountabilityInvite();
+    const text = shareAccountabilityInvite(referralCode);
     navigator.clipboard.writeText(text);
     setCopiedLink(true);
-    toast.success("Accountability Partner invite copied to clipboard!");
+    toast.success("Accountability Partner invite & referral link copied!");
     setTimeout(() => setCopiedLink(false), 2500);
   };
+
+  const handleCopyCodeOnly = () => {
+    navigator.clipboard.writeText(referralCode);
+    setCopiedCodeOnly(true);
+    toast.success("Referral code copied to clipboard!");
+    setTimeout(() => setCopiedCodeOnly(false), 2500);
+  };
+
 
   useEffect(() => {
     if (userProfile) {
@@ -324,15 +336,53 @@ function ProfileSettings() {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="p-3 rounded-lg border bg-background/80 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-semibold text-muted-foreground uppercase">Your Referral Code</div>
-                  <div className="text-base font-mono font-bold tracking-wider text-primary">ZEN-{session?.user?.first_name?.toUpperCase() || "VIP"}2026</div>
+              <div className="p-4 rounded-lg border bg-background/80 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-semibold text-muted-foreground uppercase">Your Referral Code</div>
+                    <div className="text-base font-mono font-bold tracking-wider text-primary">{referralCode}</div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button size="sm" variant="outline" onClick={handleCopyCodeOnly} className="gap-1.5 cursor-pointer">
+                      {copiedCodeOnly ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                      {copiedCodeOnly ? "Code Copied!" : "Copy Code"}
+                    </Button>
+                    <Button size="sm" onClick={handleCopyInviteLink} className="gap-1.5 cursor-pointer">
+                      {copiedLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      {copiedLink ? "Invite Link Copied!" : "Copy Invite Link"}
+                    </Button>
+                  </div>
                 </div>
-                <Button size="sm" onClick={handleCopyInviteLink} className="gap-1.5 cursor-pointer">
-                  {copiedLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  {copiedLink ? "Copied!" : "Copy Invite Link"}
-                </Button>
+                <div className="pt-2.5 border-t text-xs text-muted-foreground flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <span className="font-medium">Direct Referral Link:</span>
+                  <span className="font-mono bg-muted/60 px-2 py-1 rounded text-foreground select-all truncate max-w-full sm:max-w-xs border">
+                    {typeof window !== "undefined" ? `${window.location.origin}/register?ref=${referralCode}` : ""}
+                  </span>
+                </div>
+
+                {/* Accountability Partners List */}
+                <div className="pt-3 border-t space-y-2">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase flex items-center justify-between">
+                    <span>Your Accountability Partners</span>
+                    <Badge variant="secondary" className="text-[10px]">
+                      {(userProfile?.profile?.accountability_partners?.length || 0)} Linked
+                    </Badge>
+                  </div>
+                  {userProfile?.profile?.accountability_partners && userProfile.profile.accountability_partners.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                      {userProfile.profile.accountability_partners.map((partner: string, idx: number) => (
+                        <div key={idx} className="p-2.5 rounded-md border bg-muted/30 flex items-center gap-2 text-xs font-medium">
+                          <BadgeCheck className="h-4 w-4 text-primary shrink-0" />
+                          <span className="truncate">{partner}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">
+                      No partners linked yet. Share your referral link above (+250 XP per friend)!
+                    </p>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

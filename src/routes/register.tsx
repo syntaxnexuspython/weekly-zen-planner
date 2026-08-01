@@ -27,6 +27,12 @@ function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [referralCode, setReferralCode] = useState(() => {
+    if (typeof window !== "undefined") {
+      return new URLSearchParams(window.location.search).get("ref") || "";
+    }
+    return "";
+  });
   const [otp, setOtp] = useState("");
 
   useEffect(() => {
@@ -103,13 +109,24 @@ function RegisterPage() {
 
       // then complete registration
       await register({
-  email,
-  password,
-  first_name: firstName,
-  last_name: lastName,
-  otp,
-});
-      toast.success("Account created");
+        email,
+        password,
+        first_name: firstName,
+        last_name: lastName,
+        otp,
+        referral_code: referralCode.trim() || undefined,
+      });
+
+      if (referralCode.trim()) {
+        try {
+          const { addXP } = await import("@/lib/gamification");
+          addXP(100, "Referral Welcome Bonus");
+        } catch {}
+        toast.success("🎉 Account created! +100 XP Referral Welcome Bonus applied!");
+      } else {
+        toast.success("Account created successfully!");
+      }
+
       router.navigate({ to: "/dashboard" });
     } catch (err) {
       toast.error((err as Error).message);
@@ -199,6 +216,23 @@ function RegisterPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="referralCode">Referral Code (Optional)</Label>
+                <Input
+                  id="referralCode"
+                  type="text"
+                  placeholder="e.g. ZEN-JOBI2026"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value)}
+                  className="font-mono uppercase"
+                />
+                {referralCode && (
+                  <p className="text-xs text-primary font-medium flex items-center gap-1">
+                    ✨ Referred by: <span className="font-mono font-bold">{referralCode}</span>
+                  </p>
+                )}
               </div>
 
               <Button type="submit" className="w-full" disabled={busy}>

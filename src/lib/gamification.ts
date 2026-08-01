@@ -125,6 +125,10 @@ export function shareStreak(streakCount: number): string {
   return `🔥 I've maintained a ${streakCount}-day productivity streak on Zen Planner! 🧘✨ Join me and supercharge your goals! #ZenPlanner #ProductivityStreak`;
 }
 
-export function shareAccountabilityInvite(): string {
-  return `🧘 Hey! I invite you to be my Accountability Partner on Zen Planner. Let's stay focused, complete daily goals, and maintain our streaks together! 🚀`;
+export function shareAccountabilityInvite(referralCode?: string): string {
+  const code = referralCode || "ZEN-VIP2026";
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const link = `${origin}/register?ref=${encodeURIComponent(code)}`;
+  return `🧘 Hey! I invite you to be my Accountability Partner on Zen Planner. Let's stay focused, complete daily goals, and maintain our streaks together!\n\n🔑 Referral Code: ${code}\n🔗 Sign up here: ${link}`;
 }
+

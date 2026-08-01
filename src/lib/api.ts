@@ -257,6 +257,7 @@ export const api = {
     first_name: string;
     last_name: string;
     otp: string;
+    referral_code?: string;
   }): Promise<AuthSession> {
     let response;
     try {

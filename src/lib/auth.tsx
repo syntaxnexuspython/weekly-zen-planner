@@ -63,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     first_name: string;
     last_name: string;
     otp: string;
+    referral_code?: string;
   }) => {
     const s = await api.register(params);
     localStorage.setItem(SESSION_KEY, JSON.stringify(s));

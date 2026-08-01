@@ -40,6 +40,10 @@ export interface Task {
   createdAt: string;
   subtasks?: Subtask[];
   recurrence?: RecurrencePattern;
+  specializedTitle?: string;
+  recurrenceEndDate?: string;
+  weeklyDays?: number[];
+  monthlyDay?: number;
   attachments?: TaskAttachment[];
   calendarEventId?: string;
   isSyncedToCalendar?: boolean;

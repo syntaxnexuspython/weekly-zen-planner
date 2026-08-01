@@ -654,6 +654,11 @@ function TaskList({
             <div className="flex-1 min-w-0">
               <div className={`text-sm font-medium ${t.status === "completed" ? "line-through text-muted-foreground" : ""}`}>
                 {t.title}
+                {t.specializedTitle && (
+                  <span className="ml-2 text-xs font-normal text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+                    ✨ {t.specializedTitle}
+                  </span>
+                )}
               </div>
               <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground mt-1">
                 <Clock className="h-3 w-3" />

@@ -12,6 +12,7 @@ import { Plus, Trash2, Link as LinkIcon, Calendar, Repeat } from "lucide-react";
 
 export interface TaskFormValues {
   title: string;
+  specializedTitle?: string;
   description?: string;
   date: string;
   startTime: string;
@@ -22,6 +23,9 @@ export interface TaskFormValues {
   completedDate?: string;
   subtasks?: Subtask[];
   recurrence?: RecurrencePattern;
+  recurrenceEndDate?: string;
+  weeklyDays?: number[];
+  monthlyDay?: number;
   attachments?: TaskAttachment[];
 }
 
@@ -40,6 +44,7 @@ export function TaskFormDialog({
 }) {
   const [values, setValues] = useState<TaskFormValues>({
     title: "",
+    specializedTitle: "",
     description: "",
     date: defaultDate ?? ymd(new Date()),
     startTime: "09:00",
@@ -50,6 +55,9 @@ export function TaskFormDialog({
     completedDate: "",
     subtasks: [],
     recurrence: "none",
+    recurrenceEndDate: "",
+    weeklyDays: [],
+    monthlyDay: undefined,
     attachments: [],
   });
 
@@ -62,6 +70,7 @@ export function TaskFormDialog({
     if (initial) {
       setValues({
         title: initial.title,
+        specializedTitle: initial.specializedTitle ?? "",
         description: initial.description ?? "",
         date: initial.date,
         startTime: initial.startTime,
@@ -72,6 +81,9 @@ export function TaskFormDialog({
         completedDate: initial.completedDate ?? "",
         subtasks: initial.subtasks ? [...initial.subtasks] : [],
         recurrence: initial.recurrence ?? "none",
+        recurrenceEndDate: initial.recurrenceEndDate ?? "",
+        weeklyDays: initial.weeklyDays ? [...initial.weeklyDays] : [],
+        monthlyDay: initial.monthlyDay,
         attachments: initial.attachments ? [...initial.attachments] : [],
       });
     } else {
@@ -79,11 +91,15 @@ export function TaskFormDialog({
         ...v,
         date: defaultDate ?? v.date,
         title: "",
+        specializedTitle: "",
         description: "",
         completionNotes: "",
         completedDate: "",
         subtasks: [],
         recurrence: "none",
+        recurrenceEndDate: "",
+        weeklyDays: [],
+        monthlyDay: undefined,
         attachments: [],
       }));
     }
@@ -187,6 +203,18 @@ export function TaskFormDialog({
             <Input id="title" value={values.title} required onChange={(e) => setValues({ ...values, title: e.target.value })} />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="specializedTitle" className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+              ✨ Specialized Topic / Focus Note (Optional)
+            </Label>
+            <Input
+              id="specializedTitle"
+              placeholder="e.g. Learn React Custom Hooks (customizes this specific instance)"
+              value={values.specializedTitle || ""}
+              onChange={(e) => setValues({ ...values, specializedTitle: e.target.value })}
+              className="text-xs"
+            />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="desc">Description</Label>
             <Textarea id="desc" value={values.description} onChange={(e) => setValues({ ...values, description: e.target.value })} />
           </div>
@@ -234,6 +262,78 @@ export function TaskFormDialog({
               </Select>
             </div>
           </div>
+
+          {values.recurrence && values.recurrence !== "none" && (
+            <div className="p-3.5 rounded-lg border bg-muted/20 space-y-3">
+              <div className="text-xs font-semibold text-primary uppercase tracking-wide flex items-center gap-1.5">
+                <Repeat className="h-3.5 w-3.5" /> Recurrence Schedule Details
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="recEndDate" className="text-xs font-medium">Recurrence End Date</Label>
+                <Input
+                  id="recEndDate"
+                  type="date"
+                  value={values.recurrenceEndDate || ""}
+                  onChange={(e) => setValues({ ...values, recurrenceEndDate: e.target.value })}
+                />
+              </div>
+
+              {(values.recurrence === "weekly" || values.recurrence === "biweekly") && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium">Select Days of Week</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: "Mon", val: 0 },
+                      { label: "Tue", val: 1 },
+                      { label: "Wed", val: 2 },
+                      { label: "Thu", val: 3 },
+                      { label: "Fri", val: 4 },
+                      { label: "Sat", val: 5 },
+                      { label: "Sun", val: 6 },
+                    ].map((d) => {
+                      const selected = values.weeklyDays?.includes(d.val);
+                      return (
+                        <button
+                          key={d.val}
+                          type="button"
+                          onClick={() => {
+                            const current = values.weeklyDays || [];
+                            const updated = selected
+                              ? current.filter((x) => x !== d.val)
+                              : [...current, d.val];
+                            setValues({ ...values, weeklyDays: updated });
+                          }}
+                          className={`px-2.5 py-1 text-xs rounded-md border font-medium transition-colors cursor-pointer ${
+                            selected
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background hover:bg-accent text-muted-foreground"
+                          }`}
+                        >
+                          {d.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {values.recurrence === "monthly" && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="monthlyDay" className="text-xs font-medium">Day of Month (1-31)</Label>
+                  <Input
+                    id="monthlyDay"
+                    type="number"
+                    min={1}
+                    max={31}
+                    placeholder="e.g. 15"
+                    value={values.monthlyDay || ""}
+                    onChange={(e) => setValues({ ...values, monthlyDay: parseInt(e.target.value) || undefined })}
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex items-center gap-2 pt-1">
             <Switch checked={values.isOptional} onCheckedChange={(v) => setValues({ ...values, isOptional: v })} id="opt" />
