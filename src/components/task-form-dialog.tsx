@@ -177,7 +177,25 @@ export function TaskFormDialog({
     e.preventDefault();
     setBusy(true);
     try {
-      await onSubmit(values);
+      const payload: TaskFormValues = {
+        ...values,
+        specializedTitle: values.specializedTitle?.trim() || undefined,
+        recurrenceEndDate:
+          values.recurrence && values.recurrence !== "none" && values.recurrenceEndDate?.trim()
+            ? values.recurrenceEndDate.trim()
+            : undefined,
+        weeklyDays:
+          values.recurrence &&
+          (values.recurrence === "weekly" || values.recurrence === "biweekly") &&
+          values.weeklyDays?.length
+            ? values.weeklyDays
+            : undefined,
+        monthlyDay:
+          values.recurrence === "monthly" && values.monthlyDay
+            ? values.monthlyDay
+            : undefined,
+      };
+      await onSubmit(payload);
       onOpenChange(false);
     } finally {
       setBusy(false);
