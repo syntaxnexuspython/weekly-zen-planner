@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Plus, Trash2, Pencil, CheckCircle2, Circle, SkipForward, Clock,
-  ChevronLeft, ChevronRight, Calendar as CalendarIcon, Sparkles, Repeat, Link as LinkIcon, CheckSquare
+  ChevronLeft, ChevronRight, Calendar as CalendarIcon, Sparkles, Repeat, Link as LinkIcon, CheckSquare, FileText
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -25,7 +25,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { TaskFormDialog, type TaskFormValues } from "@/components/task-form-dialog";
 import { ZenFocusModal } from "@/components/zen-focus-modal";
+import { TaskNoteDrawer } from "@/components/notes/TaskNoteDrawer";
 import { toast } from "sonner";
+
 import type { Task } from "@/types";
 
 export const Route = createFileRoute("/planner/")({
@@ -84,6 +86,8 @@ function Planner() {
   const [completionNotesVal, setCompletionNotesVal] = useState("");
   const [completedDateVal, setCompletedDateVal] = useState("");
   const [focusTask, setFocusTask] = useState<Task | null>(null);
+  const [noteTask, setNoteTask] = useState<Task | null>(null);
+
 
   useEffect(() => {
     if (completingTask) {
@@ -295,18 +299,26 @@ function Planner() {
                           <button
                             onClick={() => setFocusTask(t)}
                             title="Start Zen Focus Session"
-                            className="p-1 rounded hover:bg-primary/10 text-primary transition-colors"
+                            className="p-1 rounded hover:bg-primary/10 text-primary transition-colors cursor-pointer"
                           >
                             <Sparkles className="h-3.5 w-3.5" />
                           </button>
                         )}
-                        <button onClick={() => { setEditing(t); setDefaultDate(undefined); setOpen(true); }} title="Edit">
+                        <button
+                          onClick={() => setNoteTask(t)}
+                          title="Task Note"
+                          className="p-1 rounded hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 transition-colors cursor-pointer"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                        </button>
+                        <button onClick={() => { setEditing(t); setDefaultDate(undefined); setOpen(true); }} title="Edit" className="cursor-pointer">
                           <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
                         </button>
-                        <button onClick={() => setConfirmDelete(t)} title="Delete">
+                        <button onClick={() => setConfirmDelete(t)} title="Delete" className="cursor-pointer">
                           <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
                         </button>
                       </div>
+
                     </div>
                     {t.status !== "skipped" && t.status !== "completed" && (
                       <div className="mt-2 flex items-center justify-between">
@@ -471,6 +483,13 @@ function Planner() {
           });
         }}
       />
+      <TaskNoteDrawer
+        taskId={noteTask?.id || null}
+        taskTitle={noteTask?.title || "Task Note"}
+        isOpen={!!noteTask}
+        onClose={() => setNoteTask(null)}
+      />
     </div>
   );
 }
+

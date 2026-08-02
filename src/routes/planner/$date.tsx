@@ -12,7 +12,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Plus, Trash2, Pencil, CheckCircle2, Circle, SkipForward, Clock, ArrowLeft, Sparkles, Repeat, Link as LinkIcon, CheckSquare
+  Plus, Trash2, Pencil, CheckCircle2, Circle, SkipForward, Clock, ArrowLeft, Sparkles, Repeat, Link as LinkIcon, CheckSquare, FileText
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter
@@ -22,7 +22,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { TaskFormDialog, type TaskFormValues } from "@/components/task-form-dialog";
 import { ZenFocusModal } from "@/components/zen-focus-modal";
+import { TaskNoteDrawer } from "@/components/notes/TaskNoteDrawer";
 import { toast } from "sonner";
+
 import type { Task } from "@/types";
 
 export const Route = createFileRoute("/planner/$date")({
@@ -68,6 +70,8 @@ function DayPlanner() {
   const [completionNotesVal, setCompletionNotesVal] = useState("");
   const [completedDateVal, setCompletedDateVal] = useState("");
   const [focusTask, setFocusTask] = useState<Task | null>(null);
+  const [noteTask, setNoteTask] = useState<Task | null>(null);
+
 
   useEffect(() => {
     if (completingTask) {
@@ -257,16 +261,25 @@ function DayPlanner() {
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setNoteTask(t)}
+                    className="gap-1 text-xs border-indigo-500/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 cursor-pointer"
+                  >
+                    <FileText className="h-3.5 w-3.5" /> Note
+                  </Button>
                   {t.status === "pending" && (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setFocusTask(t)}
-                      className="gap-1 text-xs border-primary/30 text-primary hover:bg-primary/10"
+                      className="gap-1 text-xs border-primary/30 text-primary hover:bg-primary/10 cursor-pointer"
                     >
                       <Sparkles className="h-3.5 w-3.5" /> Focus
                     </Button>
                   )}
+
                   <Button
                     variant="ghost"
                     size="icon"
@@ -420,6 +433,13 @@ function DayPlanner() {
           });
         }}
       />
+      <TaskNoteDrawer
+        taskId={noteTask?.id || null}
+        taskTitle={noteTask?.title || "Task Note"}
+        isOpen={!!noteTask}
+        onClose={() => setNoteTask(null)}
+      />
     </div>
   );
 }
+

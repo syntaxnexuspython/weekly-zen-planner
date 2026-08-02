@@ -1,6 +1,7 @@
 import { Link, useRouter, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
-import { Calendar, LayoutDashboard, LogOut, Shield, ListTodo, User, Inbox, MessageSquare, ShieldCheck } from "lucide-react";
+import { Calendar, LayoutDashboard, LogOut, Shield, ListTodo, User, Inbox, MessageSquare, ShieldCheck, FileText } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { type ReactNode, useEffect, useState, useMemo } from "react";
 import { ChatbotAssistant } from "./chatbot-assistant";
@@ -160,6 +161,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Link to="/habit-quitter" className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent text-primary" activeProps={{ className: "bg-accent" }}>
                   <ShieldCheck className="h-4 w-4" /> <span className="hidden md:inline">Habit Vault</span>
                 </Link>
+                <Link to="/notes" className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent" activeProps={{ className: "bg-accent" }}>
+                  <FileText className="h-4 w-4 text-indigo-500" /> <span className="hidden md:inline">Notes</span>
+                </Link>
+
                 <button
                   onClick={() => setPendingOpen(true)}
                   className="relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent cursor-pointer focus:outline-none"

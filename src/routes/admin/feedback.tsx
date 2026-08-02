@@ -9,6 +9,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MessageSquare, AlertTriangle, Lightbulb, Heart, HelpCircle, Edit2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -32,6 +42,7 @@ function AdminFeedbackManagement() {
   const [statusVal, setStatusVal] = useState<FeedbackStatus>("pending");
   const [notesVal, setNotesVal] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
+  const [feedbackToDelete, setFeedbackToDelete] = useState<string | null>(null);
 
   const filteredFeedbacks = useMemo(() => {
     return feedbacks.filter((f) => {
@@ -85,7 +96,6 @@ function AdminFeedbackManagement() {
   }
 
   async function handleDeleteFeedback(id: string) {
-    if (!confirm("Are you sure you want to permanently delete this feedback?")) return;
     try {
       await deleteMutation.mutateAsync(id);
       if (selectedFeedback?.id === id) {
@@ -221,7 +231,7 @@ function AdminFeedbackManagement() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => handleDeleteFeedback(item.id)}
+                          onClick={() => setFeedbackToDelete(item.id)}
                           className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50/50 cursor-pointer"
                           title="Delete"
                         >
@@ -325,7 +335,7 @@ function AdminFeedbackManagement() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => handleDeleteFeedback(selectedFeedback.id)}
+                  onClick={() => setFeedbackToDelete(selectedFeedback.id)}
                   className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 border-rose-200 cursor-pointer text-xs"
                 >
                   <Trash2 className="mr-1 h-3.5 w-3.5" />
@@ -353,6 +363,31 @@ function AdminFeedbackManagement() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!feedbackToDelete} onOpenChange={(o) => !o && setFeedbackToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete feedback item?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete this feedback? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (feedbackToDelete) {
+                  handleDeleteFeedback(feedbackToDelete);
+                }
+                setFeedbackToDelete(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

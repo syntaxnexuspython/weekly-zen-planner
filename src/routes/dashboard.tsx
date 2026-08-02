@@ -16,15 +16,27 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   CheckCircle2, Circle, Flame, Snowflake, ListChecks, Clock,
-  Sparkles, Star, TrendingUp, Megaphone, Volume2, VolumeX, CheckSquare, Repeat
+  Sparkles, Star, TrendingUp, Megaphone, Volume2, VolumeX, CheckSquare, Repeat, FileText
 } from "lucide-react";
 import { ZenFocusModal } from "@/components/zen-focus-modal";
+import { TaskNoteDrawer } from "@/components/notes/TaskNoteDrawer";
 import { toast } from "sonner";
 import type { Task, Reward, StreakDayStatus } from "@/types";
+
 
 export const Route = createFileRoute("/dashboard")({
   component: () => (
@@ -49,6 +61,7 @@ function RewardSelector({
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rewardToDelete, setRewardToDelete] = useState<Reward | null>(null);
 
   const genericRewards = rewards.filter((r) => r.is_generic);
   const customRewards = rewards.filter((r) => !r.is_generic);
@@ -67,7 +80,8 @@ function RewardSelector({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="w-full cursor-pointer">
           <Star className="mr-2 h-4 w-4 text-amber-500" />
@@ -152,7 +166,7 @@ function RewardSelector({
                         size="sm"
                         className="cursor-pointer text-red-500 hover:text-red-600 hover:bg-red-50"
                         variant="ghost"
-                        onClick={() => onDelete(reward.id)}
+                        onClick={() => setRewardToDelete(reward)}
                       >
                         Delete
                       </Button>
@@ -194,6 +208,32 @@ function RewardSelector({
         </div>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={!!rewardToDelete} onOpenChange={(o) => !o && setRewardToDelete(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete custom reward?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete custom reward "{rewardToDelete?.title}"? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={async () => {
+              if (rewardToDelete) {
+                await onDelete(rewardToDelete.id);
+              }
+              setRewardToDelete(null);
+            }}
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
@@ -261,6 +301,8 @@ function Dashboard() {
   const [isLoadingMotivation, setIsLoadingMotivation] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [focusTask, setFocusTask] = useState<Task | null>(null);
+  const [noteTask, setNoteTask] = useState<Task | null>(null);
+
 
   function handleSpeakBriefing() {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
@@ -599,9 +641,9 @@ function Dashboard() {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-3">
-        <TaskList title="Today's tasks" tasks={todays} onToggle={toggle} onStartFocus={setFocusTask} empty="Nothing scheduled today." />
-        <TaskList title="Priority" tasks={priority} onToggle={toggle} onStartFocus={setFocusTask} empty="No high-priority tasks." />
-        <TaskList title="Optional" tasks={optional} onToggle={toggle} onStartFocus={setFocusTask} empty="No optional tasks." />
+        <TaskList title="Today's tasks" tasks={todays} onToggle={toggle} onStartFocus={setFocusTask} onOpenNote={setNoteTask} empty="Nothing scheduled today." />
+        <TaskList title="Priority" tasks={priority} onToggle={toggle} onStartFocus={setFocusTask} onOpenNote={setNoteTask} empty="No high-priority tasks." />
+        <TaskList title="Optional" tasks={optional} onToggle={toggle} onStartFocus={setFocusTask} onOpenNote={setNoteTask} empty="No optional tasks." />
       </section>
 
       <ZenFocusModal
@@ -612,6 +654,14 @@ function Dashboard() {
           toggle(updatedTask);
         }}
       />
+
+      <TaskNoteDrawer
+        taskId={noteTask?.id || null}
+        taskTitle={noteTask?.title || "Task Note"}
+        isOpen={!!noteTask}
+        onClose={() => setNoteTask(null)}
+      />
+
     </div>
   );
 }
@@ -631,8 +681,15 @@ function StatCard({ label, value, icon }: { label: string; value: React.ReactNod
 }
 
 function TaskList({
-  title, tasks, onToggle, onStartFocus, empty,
-}: { title: string; tasks: Task[]; onToggle: (t: Task) => void; onStartFocus: (t: Task) => void; empty: string }) {
+  title, tasks, onToggle, onStartFocus, onOpenNote, empty,
+}: {
+  title: string;
+  tasks: Task[];
+  onToggle: (t: Task) => void;
+  onStartFocus: (t: Task) => void;
+  onOpenNote?: (t: Task) => void;
+  empty: string;
+}) {
   const priColor: Record<Task["priority"], string> = {
     high: "bg-red-500/10 text-red-600 border-red-500/20",
     medium: "bg-amber-500/10 text-amber-600 border-amber-500/20",
@@ -678,18 +735,30 @@ function TaskList({
                 )}
               </div>
             </div>
-            {t.status === "pending" && (
-              <button
-                onClick={() => onStartFocus(t)}
-                title="Start Zen Focus"
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-primary/10 text-primary text-xs flex items-center gap-1 font-medium"
-              >
-                <Sparkles className="h-3.5 w-3.5" /> Focus
-              </button>
-            )}
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {onOpenNote && (
+                <button
+                  onClick={() => onOpenNote(t)}
+                  title="Task Note"
+                  className="p-1 rounded hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs flex items-center gap-1 font-medium"
+                >
+                  <FileText className="h-3.5 w-3.5" /> Note
+                </button>
+              )}
+              {t.status === "pending" && (
+                <button
+                  onClick={() => onStartFocus(t)}
+                  title="Start Zen Focus"
+                  className="p-1 rounded hover:bg-primary/10 text-primary text-xs flex items-center gap-1 font-medium"
+                >
+                  <Sparkles className="h-3.5 w-3.5" /> Focus
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </CardContent>
     </Card>
   );
 }
+

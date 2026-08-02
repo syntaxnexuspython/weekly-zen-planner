@@ -9,6 +9,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Edit, Trash2, Megaphone, Check, X, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -33,6 +43,7 @@ function AdminAnnouncements() {
   const [bannerUrl, setBannerUrl] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [announcementToDelete, setAnnouncementToDelete] = useState<Announcement | null>(null);
 
   function openCreate() {
     setEditingAnnouncement(null);
@@ -97,7 +108,6 @@ function AdminAnnouncements() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to permanently delete this announcement?")) return;
     try {
       await deleteMutation.mutateAsync(id);
     } catch (err: any) {
@@ -205,7 +215,7 @@ function AdminAnnouncements() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => handleDelete(a.id)}
+                          onClick={() => setAnnouncementToDelete(a)}
                           className="h-8 w-8 text-red-500 hover:text-red-600 cursor-pointer"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -290,6 +300,31 @@ function AdminAnnouncements() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!announcementToDelete} onOpenChange={(o) => !o && setAnnouncementToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete announcement?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete announcement "{announcementToDelete?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (announcementToDelete) {
+                  handleDelete(announcementToDelete.id);
+                }
+                setAnnouncementToDelete(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

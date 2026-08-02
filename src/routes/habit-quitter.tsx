@@ -9,6 +9,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
@@ -66,6 +76,7 @@ function HabitQuitterPage() {
 
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [activeHabitForHistory, setActiveHabitForHistory] = useState<any>(null);
+  const [confirmDeleteHabit, setConfirmDeleteHabit] = useState<any>(null);
 
   const [sosModalOpen, setSosModalOpen] = useState(false);
   const [breathPhase, setBreathPhase] = useState<"Inhale" | "Hold" | "Exhale">("Inhale");
@@ -413,11 +424,7 @@ function HabitQuitterPage() {
                     variant="ghost"
                     size="icon"
                     className="text-muted-foreground hover:text-destructive h-8 w-8 cursor-pointer"
-                    onClick={() => {
-                      if (confirm(`Delete habit tracker "${habit.title}"?`)) {
-                        deleteHabitMutation.mutate(habit.id);
-                      }
-                    }}
+                    onClick={() => setConfirmDeleteHabit(habit)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -800,6 +807,32 @@ function HabitQuitterPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog open={!!confirmDeleteHabit} onOpenChange={(open) => !open && setConfirmDeleteHabit(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete habit tracker?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete habit tracker "{confirmDeleteHabit?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (confirmDeleteHabit) {
+                  deleteHabitMutation.mutate(confirmDeleteHabit.id);
+                }
+                setConfirmDeleteHabit(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

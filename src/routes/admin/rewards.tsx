@@ -14,6 +14,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Edit, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
@@ -36,6 +46,7 @@ function AdminStreakRules() {
   const [ruleFreezes, setRuleFreezes] = useState(1);
   const [ruleMaxFreezes, setRuleMaxFreezes] = useState(2);
   const [ruleActive, setRuleActive] = useState(true);
+  const [ruleToDelete, setRuleToDelete] = useState<StreakRule | null>(null);
 
   function openCreateRule() {
     setRuleToEdit(null);
@@ -95,7 +106,6 @@ function AdminStreakRules() {
   }
 
   async function handleDeleteRule(id: string) {
-    if (!confirm("Are you sure you want to delete this streak rule?")) return;
     try {
       await api.adminDeleteStreakRule(id);
       toast.success("Streak rule deleted");
@@ -172,7 +182,7 @@ function AdminStreakRules() {
                           size="icon"
                           variant="ghost"
                           className="h-8 w-8 text-red-500 hover:text-red-650 cursor-pointer"
-                          onClick={() => handleDeleteRule(rule.id)}
+                          onClick={() => setRuleToDelete(rule)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -262,6 +272,31 @@ function AdminStreakRules() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!ruleToDelete} onOpenChange={(o) => !o && setRuleToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete streak rule?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete streak rule "{ruleToDelete?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (ruleToDelete) {
+                  handleDeleteRule(ruleToDelete.id);
+                }
+                setRuleToDelete(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

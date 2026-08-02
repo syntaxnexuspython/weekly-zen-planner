@@ -164,3 +164,56 @@ export interface Announcement {
   isActive: boolean;
   createdAt: string;
 }
+
+export type NoteBlockType =
+  | "paragraph"
+  | "heading1"
+  | "heading2"
+  | "heading3"
+  | "bullet"
+  | "numbered"
+  | "todo"
+  | "callout"
+  | "code"
+  | "divider";
+
+export interface NoteBlock {
+  id: string;
+  type: NoteBlockType;
+  content: string;
+  checked?: boolean; // For todo blocks
+  language?: string; // For code blocks
+}
+
+export interface Note {
+  id: string;
+  user_id: string;
+  title: string;
+  blocks: NoteBlock[];
+  entity_type?: string | null;
+  entity_id?: string | null;
+  tags: string[];
+  is_pinned: boolean;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NoteCreatePayload {
+  title?: string;
+  blocks?: NoteBlock[];
+  entity_type?: string | null;
+  entity_id?: string | null;
+  tags?: string[];
+  is_pinned?: boolean;
+}
+
+export interface NoteUpdatePayload {
+  title?: string;
+  blocks?: NoteBlock[];
+  entity_type?: string | null;
+  entity_id?: string | null;
+  tags?: string[];
+  is_pinned?: boolean;
+  is_archived?: boolean;
+}

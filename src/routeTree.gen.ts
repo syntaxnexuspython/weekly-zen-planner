@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PlannerRouteImport } from './routes/planner'
+import { Route as NotesRouteImport } from './routes/notes'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HabitQuitterRouteImport } from './routes/habit-quitter'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -41,6 +42,11 @@ const ProfileRoute = ProfileRouteImport.update({
 const PlannerRoute = PlannerRouteImport.update({
   id: '/planner',
   path: '/planner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotesRoute = NotesRouteImport.update({
+  id: '/notes',
+  path: '/notes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -126,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/habit-quitter': typeof HabitQuitterRoute
   '/login': typeof LoginRoute
+  '/notes': typeof NotesRoute
   '/planner': typeof PlannerRouteWithChildren
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/habit-quitter': typeof HabitQuitterRoute
   '/login': typeof LoginRoute
+  '/notes': typeof NotesRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/habit-quitter': typeof HabitQuitterRoute
   '/login': typeof LoginRoute
+  '/notes': typeof NotesRoute
   '/planner': typeof PlannerRouteWithChildren
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/habit-quitter'
     | '/login'
+    | '/notes'
     | '/planner'
     | '/profile'
     | '/register'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/habit-quitter'
     | '/login'
+    | '/notes'
     | '/profile'
     | '/register'
     | '/admin/announcements'
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/habit-quitter'
     | '/login'
+    | '/notes'
     | '/planner'
     | '/profile'
     | '/register'
@@ -246,6 +258,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   HabitQuitterRoute: typeof HabitQuitterRoute
   LoginRoute: typeof LoginRoute
+  NotesRoute: typeof NotesRoute
   PlannerRoute: typeof PlannerRouteWithChildren
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
@@ -272,6 +285,13 @@ declare module '@tanstack/react-router' {
       path: '/planner'
       fullPath: '/planner'
       preLoaderRoute: typeof PlannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notes': {
+      id: '/notes'
+      path: '/notes'
+      fullPath: '/notes'
+      preLoaderRoute: typeof NotesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -424,6 +444,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   HabitQuitterRoute: HabitQuitterRoute,
   LoginRoute: LoginRoute,
+  NotesRoute: NotesRoute,
   PlannerRoute: PlannerRouteWithChildren,
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
