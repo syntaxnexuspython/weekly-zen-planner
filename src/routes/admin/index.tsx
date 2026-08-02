@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Flame, Award, Sparkles, ArrowRight, MessageSquare, Megaphone } from "lucide-react";
+import { Users, Flame, Award, Sparkles, ArrowRight, MessageSquare, Megaphone, ShieldAlert } from "lucide-react";
 import type { ReactNode } from "react";
 
 export const Route = createFileRoute("/admin/")({
@@ -174,6 +174,33 @@ function AdminOverviewDashboard() {
             <Link to="/admin/announcements" className="w-full">
               <button className="w-full inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-semibold h-9 px-4 border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors">
                 Manage Announcements <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Bad Habits Vault Settings Section */}
+        <Card className="flex flex-col justify-between hover:shadow-md transition-shadow">
+          <CardHeader>
+            <div className="flex items-center justify-between mb-2">
+              <div className="rounded-full bg-amber-500/10 p-2 text-amber-600">
+                <ShieldAlert className="h-5 w-5" />
+              </div>
+              <Badge variant="secondary">System Config</Badge>
+            </div>
+            <CardTitle className="text-base">Bad Habits Vault Limit</CardTitle>
+            <CardDescription>
+              Configure global system limit for maximum active bad habit trackers per user.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0 flex-1 flex flex-col justify-between">
+            <div className="text-xs text-muted-foreground mb-4 space-y-1">
+              <div>• Control active limit: <span className="font-semibold text-foreground">1 to 50</span></div>
+              <div>• Default limit: <span className="font-semibold text-amber-600">3 Habits</span></div>
+            </div>
+            <Link to="/admin/habits" className="w-full">
+              <button className="w-full inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-semibold h-9 px-4 border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors">
+                Configure Limit <ArrowRight className="h-3.5 w-3.5" />
               </button>
             </Link>
           </CardContent>

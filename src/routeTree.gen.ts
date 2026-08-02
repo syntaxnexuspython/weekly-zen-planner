@@ -13,6 +13,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as HabitQuitterRouteImport } from './routes/habit-quitter'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -23,6 +24,7 @@ import { Route as PlannerDateRouteImport } from './routes/planner/$date'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminRewardsRouteImport } from './routes/admin/rewards'
 import { Route as AdminMotivationsRouteImport } from './routes/admin/motivations'
+import { Route as AdminHabitsRouteImport } from './routes/admin/habits'
 import { Route as AdminFeedbackRouteImport } from './routes/admin/feedback'
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin/announcements'
 
@@ -44,6 +46,11 @@ const PlannerRoute = PlannerRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HabitQuitterRoute = HabitQuitterRouteImport.update({
+  id: '/habit-quitter',
+  path: '/habit-quitter',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -96,6 +103,11 @@ const AdminMotivationsRoute = AdminMotivationsRouteImport.update({
   path: '/motivations',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminHabitsRoute = AdminHabitsRouteImport.update({
+  id: '/habits',
+  path: '/habits',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminFeedbackRoute = AdminFeedbackRouteImport.update({
   id: '/feedback',
   path: '/feedback',
@@ -112,12 +124,14 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/habit-quitter': typeof HabitQuitterRoute
   '/login': typeof LoginRoute
   '/planner': typeof PlannerRouteWithChildren
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/feedback': typeof AdminFeedbackRoute
+  '/admin/habits': typeof AdminHabitsRoute
   '/admin/motivations': typeof AdminMotivationsRoute
   '/admin/rewards': typeof AdminRewardsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -129,11 +143,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/habit-quitter': typeof HabitQuitterRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/feedback': typeof AdminFeedbackRoute
+  '/admin/habits': typeof AdminHabitsRoute
   '/admin/motivations': typeof AdminMotivationsRoute
   '/admin/rewards': typeof AdminRewardsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -147,12 +163,14 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/habit-quitter': typeof HabitQuitterRoute
   '/login': typeof LoginRoute
   '/planner': typeof PlannerRouteWithChildren
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/feedback': typeof AdminFeedbackRoute
+  '/admin/habits': typeof AdminHabitsRoute
   '/admin/motivations': typeof AdminMotivationsRoute
   '/admin/rewards': typeof AdminRewardsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -167,12 +185,14 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/forgot-password'
+    | '/habit-quitter'
     | '/login'
     | '/planner'
     | '/profile'
     | '/register'
     | '/admin/announcements'
     | '/admin/feedback'
+    | '/admin/habits'
     | '/admin/motivations'
     | '/admin/rewards'
     | '/admin/users'
@@ -184,11 +204,13 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/forgot-password'
+    | '/habit-quitter'
     | '/login'
     | '/profile'
     | '/register'
     | '/admin/announcements'
     | '/admin/feedback'
+    | '/admin/habits'
     | '/admin/motivations'
     | '/admin/rewards'
     | '/admin/users'
@@ -201,12 +223,14 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/forgot-password'
+    | '/habit-quitter'
     | '/login'
     | '/planner'
     | '/profile'
     | '/register'
     | '/admin/announcements'
     | '/admin/feedback'
+    | '/admin/habits'
     | '/admin/motivations'
     | '/admin/rewards'
     | '/admin/users'
@@ -220,6 +244,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   DashboardRoute: typeof DashboardRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  HabitQuitterRoute: typeof HabitQuitterRoute
   LoginRoute: typeof LoginRoute
   PlannerRoute: typeof PlannerRouteWithChildren
   ProfileRoute: typeof ProfileRoute
@@ -254,6 +279,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/habit-quitter': {
+      id: '/habit-quitter'
+      path: '/habit-quitter'
+      fullPath: '/habit-quitter'
+      preLoaderRoute: typeof HabitQuitterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -326,6 +358,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMotivationsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/habits': {
+      id: '/admin/habits'
+      path: '/habits'
+      fullPath: '/admin/habits'
+      preLoaderRoute: typeof AdminHabitsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/feedback': {
       id: '/admin/feedback'
       path: '/feedback'
@@ -346,6 +385,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
   AdminFeedbackRoute: typeof AdminFeedbackRoute
+  AdminHabitsRoute: typeof AdminHabitsRoute
   AdminMotivationsRoute: typeof AdminMotivationsRoute
   AdminRewardsRoute: typeof AdminRewardsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -355,6 +395,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
   AdminFeedbackRoute: AdminFeedbackRoute,
+  AdminHabitsRoute: AdminHabitsRoute,
   AdminMotivationsRoute: AdminMotivationsRoute,
   AdminRewardsRoute: AdminRewardsRoute,
   AdminUsersRoute: AdminUsersRoute,
@@ -381,6 +422,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   DashboardRoute: DashboardRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  HabitQuitterRoute: HabitQuitterRoute,
   LoginRoute: LoginRoute,
   PlannerRoute: PlannerRouteWithChildren,
   ProfileRoute: ProfileRoute,

@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/require-auth";
-import { Shield, Users, Flame, Sparkles, Menu, X, MessageSquare, Megaphone } from "lucide-react";
+import { Shield, Users, Flame, Sparkles, Menu, X, MessageSquare, Megaphone, ShieldAlert } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -26,6 +26,11 @@ function AdminLayout() {
       to: "/admin/users",
       label: "User Management",
       icon: <Users className="h-4 w-4 text-emerald-500" />,
+    },
+    {
+      to: "/admin/habits",
+      label: "Bad Habits Limit",
+      icon: <ShieldAlert className="h-4 w-4 text-amber-500" />,
     },
     {
       to: "/admin/rewards",

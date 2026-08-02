@@ -979,6 +979,115 @@ export const api = {
     }
   },
 
+  async getHabitPinStatus(): Promise<{ has_pin: boolean }> {
+    try {
+      const response = await client.get("/api/v1/habits/pin/status");
+      return response.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async setHabitPin(pin: string): Promise<void> {
+    try {
+      await client.post("/api/v1/habits/pin/set", { pin });
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async verifyHabitPin(pin: string): Promise<boolean> {
+    try {
+      const response = await client.post("/api/v1/habits/pin/verify", { pin });
+      return response.data.status === "success";
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async resetHabitPinWithPassword(account_password: string, new_pin: string): Promise<void> {
+    try {
+      await client.post("/api/v1/habits/pin/reset-with-password", { account_password, new_pin });
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async getHabits(): Promise<{ habits: any[]; max_limit: number; can_add: boolean }> {
+    try {
+      const response = await client.get("/api/v1/habits");
+      return response.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async createHabit(habit: { title: string; description?: string; target_days: number; start_date: string }): Promise<any> {
+    try {
+      const response = await client.post("/api/v1/habits", habit);
+      return response.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async deleteHabit(id: string): Promise<void> {
+    try {
+      await client.delete(`/api/v1/habits/${id}`);
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async markHabitRelapse(id: string, relapse_reason?: string): Promise<any> {
+    try {
+      const response = await client.post(`/api/v1/habits/${id}/relapse`, { relapse_reason });
+      return response.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async markRelapseHabit(id: string, relapse_reason?: string): Promise<any> {
+    return this.markHabitRelapse(id, relapse_reason);
+  },
+
+  async addHabitJournalLog(id: string, log: { date: string; struggle_level: string; notes?: string; triggers: string[] }): Promise<any> {
+    try {
+      const response = await client.post(`/api/v1/habits/${id}/journal`, log);
+      return response.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async listHabitJournalLogs(id: string): Promise<any[]> {
+    try {
+      const response = await client.get(`/api/v1/habits/${id}/journal`);
+      return response.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async getAdminHabitLimit(): Promise<number> {
+    try {
+      const response = await client.get("/api/v1/habits/admin/limit");
+      return response.data.data.max_bad_habits_limit;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async updateAdminHabitLimit(limit: number): Promise<number> {
+    try {
+      const response = await client.patch("/api/v1/habits/admin/limit", { max_bad_habits_limit: limit });
+      return response.data.data.max_bad_habits_limit;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
   computeWeeklyStats(tasks: Task[]): WeeklyStats {
     const total = tasks.length;
     const completed = tasks.filter((t) => t.status === "completed").length;
