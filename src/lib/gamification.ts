@@ -1,3 +1,5 @@
+import { api } from "./api";
+
 const GAMIFICATION_STORAGE_KEY = "zen_planner_gamification_v1";
 
 export interface UserGamificationState {
@@ -27,29 +29,48 @@ const DEFAULT_STATE: UserGamificationState = {
 
 let inMemoryState: UserGamificationState = { ...DEFAULT_STATE };
 
-// Preload state from localStorage
+// Preload state from localStorage as immediate fallback
 if (typeof window !== "undefined") {
   try {
     const raw = localStorage.getItem(GAMIFICATION_STORAGE_KEY);
     if (raw) {
       inMemoryState = JSON.parse(raw);
-    } else {
-      localStorage.setItem(GAMIFICATION_STORAGE_KEY, JSON.stringify(DEFAULT_STATE));
     }
   } catch (e) {
-    console.warn("Failed to load gamification state:", e);
+    console.warn("Failed to load local gamification state:", e);
   }
 }
 
-export function getGamificationState(): UserGamificationState {
-  if (typeof window !== "undefined") {
-    try {
-      const raw = localStorage.getItem(GAMIFICATION_STORAGE_KEY);
-      if (raw) {
-        inMemoryState = JSON.parse(raw);
+export async function syncGamificationFromDB(): Promise<UserGamificationState> {
+  try {
+    const data = await api.getGamificationProfile();
+    if (data) {
+      const calculatedLevel = data.level || Math.floor((data.xp || 350) / 500) + 1;
+      const stateFromDB: UserGamificationState = {
+        xp: data.xp ?? DEFAULT_STATE.xp,
+        level: calculatedLevel,
+        levelTitle: getLevelTitle(calculatedLevel),
+        unlockedThemes: data.unlocked_themes && data.unlocked_themes.length > 0 ? data.unlocked_themes : DEFAULT_STATE.unlockedThemes,
+        unlockedBorders: data.unlocked_borders && data.unlocked_borders.length > 0 ? data.unlocked_borders : DEFAULT_STATE.unlockedBorders,
+        activeBorder: data.active_border || DEFAULT_STATE.activeBorder,
+      };
+
+      inMemoryState = stateFromDB;
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(GAMIFICATION_STORAGE_KEY, JSON.stringify(stateFromDB));
+          window.dispatchEvent(new CustomEvent("gamification_updated", { detail: stateFromDB }));
+        } catch {}
       }
-    } catch {}
+      return stateFromDB;
+    }
+  } catch (e) {
+    console.warn("Gamification DB sync skipped (offline or unauthenticated):", e);
   }
+  return inMemoryState;
+}
+
+export function getGamificationState(): UserGamificationState {
   return inMemoryState;
 }
 
@@ -94,12 +115,20 @@ export function addXP(amount: number, reason?: string): { state: UserGamificatio
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem(GAMIFICATION_STORAGE_KEY, JSON.stringify(updatedState));
-      // Dispatch custom event for UI reactivity
       window.dispatchEvent(new CustomEvent("gamification_updated", { detail: updatedState }));
     } catch (e) {
-      console.warn("Failed to persist gamification state:", e);
+      console.warn("Failed to persist gamification state locally:", e);
     }
   }
+
+  // Persist to database so mobile & web stay synced!
+  api.updateGamificationProfile({
+    xp: newXP,
+    level: newLevel,
+    unlocked_themes: unlockedThemes,
+    unlocked_borders: unlockedBorders,
+    active_border: current.activeBorder,
+  }).catch((e) => console.warn("Failed to sync XP to DB:", e));
 
   if (leveledUp) {
     levelUpListeners.forEach((cb) => cb(newLevel, getLevelTitle(newLevel)));
@@ -118,6 +147,12 @@ export function setActiveAvatarBorder(borderId: string): UserGamificationState {
       window.dispatchEvent(new CustomEvent("gamification_updated", { detail: updatedState }));
     } catch {}
   }
+
+  // Sync active border to database!
+  api.updateGamificationProfile({
+    active_border: borderId,
+  }).catch((e) => console.warn("Failed to sync active border to DB:", e));
+
   return updatedState;
 }
 
@@ -131,4 +166,3 @@ export function shareAccountabilityInvite(referralCode?: string): string {
   const link = `${origin}/register?ref=${encodeURIComponent(code)}`;
   return `🧘 Hey! I invite you to be my Accountability Partner on Zen Planner. Let's stay focused, complete daily goals, and maintain our streaks together!\n\n🔑 Referral Code: ${code}\n🔗 Sign up here: ${link}`;
 }
-

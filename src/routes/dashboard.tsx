@@ -34,8 +34,10 @@ import {
 } from "lucide-react";
 import { ZenFocusModal } from "@/components/zen-focus-modal";
 import { TaskNoteDrawer } from "@/components/notes/TaskNoteDrawer";
+import { addXP } from "@/lib/gamification";
 import { toast } from "sonner";
 import type { Task, Reward, StreakDayStatus } from "@/types";
+
 
 
 export const Route = createFileRoute("/dashboard")({
@@ -359,8 +361,12 @@ function Dashboard() {
     qc.invalidateQueries({ queryKey: ["tasks"] });
     qc.invalidateQueries({ queryKey: ["streak"] });
     qc.invalidateQueries({ queryKey: ["streakHistory"] });
-    if (next === "completed") toast.success("Nice work — task completed");
+    if (next === "completed") {
+      addXP(50, "Task Completed");
+      toast.success("Nice work — task completed! (+50 XP 🎉)");
+    }
   }
+
 
   async function handleSelectReward(id: string) {
     try {

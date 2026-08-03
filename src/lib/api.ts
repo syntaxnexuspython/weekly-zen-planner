@@ -462,6 +462,59 @@ export const api = {
     return response.data;
   },
 
+  async getGamificationProfile(): Promise<{
+    xp: number;
+    level: number;
+    active_theme: string;
+    unlocked_themes: string[];
+    active_border: string;
+    unlocked_borders: string[];
+    referral_code?: string;
+    referred_by?: string;
+    accountability_partners: string[];
+  }> {
+    let response;
+    try {
+      response = await client.get("/api/v1/user/profile");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<any>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to fetch gamification profile");
+    }
+    return payload.data;
+  },
+
+  async updateGamificationProfile(data: {
+    xp?: number;
+    level?: number;
+    active_theme?: string;
+    unlocked_themes?: string[];
+    active_border?: string;
+    unlocked_borders?: string[];
+  }): Promise<any> {
+    let response;
+    try {
+      response = await client.patch("/api/v1/user/gamification", data);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<any>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to update gamification profile");
+    }
+    return payload.data;
+  },
+
   async changePassword(oldPassword: string, newPassword: string): Promise<void> {
     let response;
     try {

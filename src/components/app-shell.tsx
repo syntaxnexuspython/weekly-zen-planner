@@ -13,6 +13,8 @@ import { PendingTasksSheet } from "./pending-tasks-sheet";
 import { FeedbackDialog } from "./feedback-dialog";
 import { ThemeToggle } from "./theme-toggle";
 
+import { syncGamificationFromDB } from "@/lib/gamification";
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { session, logout } = useAuth();
   const router = useRouter();
@@ -31,6 +33,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pendingCount = useMemo(() => {
     return tasks.filter((t) => t.status === "pending").length;
   }, [tasks]);
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+    syncGamificationFromDB();
+  }, [session?.access_token]);
 
   useEffect(() => {
     if (!session?.access_token) return;

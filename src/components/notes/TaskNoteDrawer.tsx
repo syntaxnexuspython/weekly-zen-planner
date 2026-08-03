@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, FileText, Loader2, Save, WifiOff } from "lucide-react";
+import { addXP } from "@/lib/gamification";
 import { toast } from "sonner";
+
 
 interface TaskNoteDrawerProps {
   taskId: string | null;
@@ -86,7 +88,8 @@ export const TaskNoteDrawer: React.FC<TaskNoteDrawerProps> = ({
         toast.error("Note service is currently offline. Changes could not be saved.");
       } else if (res.data) {
         setNote(res.data);
-        toast.success("Note saved!");
+        addXP(25, "Task Note Saved");
+        toast.success("Note saved! (+25 XP 🎉)");
       }
     } else {
       // Create
@@ -102,9 +105,11 @@ export const TaskNoteDrawer: React.FC<TaskNoteDrawerProps> = ({
         toast.error("Note service is currently offline. Unable to save note.");
       } else if (res.data) {
         setNote(res.data);
-        toast.success("Note created!");
+        addXP(25, "Task Note Created");
+        toast.success("Note created! (+25 XP 🎉)");
       }
     }
+
 
     setSaving(false);
   };

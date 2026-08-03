@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Note, NoteBlock, Task } from "@/types";
 import { notesApi } from "@/lib/notes-api";
@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { NotionBlockEditor } from "@/components/notes/NotionBlockEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { addXP } from "@/lib/gamification";
 import {
   FileText,
   Plus,
@@ -22,6 +23,7 @@ import {
   Link as LinkIcon,
 } from "lucide-react";
 import { toast } from "sonner";
+
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/notes")({
@@ -41,11 +43,38 @@ function NotesPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [isOffline, setIsOffline] = useState<boolean>(false);
+  const [showAllTasks, setShowAllTasks] = useState<boolean>(false);
 
   const { data: userTasks = [] } = useQuery({
     queryKey: ["all-tasks"],
     queryFn: () => api.listTasks(),
   });
+
+  const filteredTasks = useMemo(() => {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+    const filtered = userTasks.filter((t) => {
+      // If toggle is ON, include all tasks
+      if (showAllTasks) return true;
+      // Always include the currently selected active task so it doesn't get hidden if selected
+      if (t.id === activeEntityId) return true;
+      // Include pending tasks
+      if (t.status === "pending") return true;
+      // Include today's task regardless of status (completed, skipped, pending)
+      const taskDateOnly = t.date ? t.date.split("T")[0] : "";
+      if (taskDateOnly === todayStr) return true;
+
+      return false;
+    });
+
+    // Datewise order by (newest/latest date first, fallback to createdAt)
+    return [...filtered].sort((a, b) => {
+      const dateA = a.date || a.createdAt || "";
+      const dateB = b.date || b.createdAt || "";
+      return dateB.localeCompare(dateA);
+    });
+  }, [userTasks, showAllTasks, activeEntityId]);
 
   const fetchNotes = useCallback(async () => {
     setLoading(true);
@@ -103,7 +132,8 @@ function NotesPage() {
       setIsOffline(true);
       toast.error("Notes service is unreachable. Cannot create note right now.");
     } else if (res.data) {
-      toast.success("New note created!");
+      addXP(25, "New Note Created");
+      toast.success("New note created! (+25 XP 🎉)");
       setNotes((prev) => [res.data!, ...prev]);
       selectNote(res.data);
     }
@@ -124,11 +154,13 @@ function NotesPage() {
       setIsOffline(true);
       toast.error("Notes service is offline. Unable to save note.");
     } else if (res.data) {
-      toast.success("Note saved");
+      addXP(25, "Note Saved");
+      toast.success("Note saved! (+25 XP 🎉)");
       const updated = res.data;
       setNotes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)));
       setActiveNote(updated);
     }
+
 
     setSaving(false);
   };
@@ -362,7 +394,7 @@ function NotesPage() {
                   className="text-2xl font-bold bg-transparent text-foreground outline-none border-none placeholder:text-muted-foreground/40 w-full"
                 />
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                   {/* Task Linker Selector */}
                   <div className="flex items-center gap-1.5 bg-muted/60 border rounded-lg px-2.5 py-1 text-xs">
                     <LinkIcon className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
@@ -379,18 +411,47 @@ function NotesPage() {
                           setActiveEntityId(null);
                         }
                       }}
-                      className="bg-transparent text-foreground outline-none cursor-pointer max-w-[170px] truncate"
+                      className="bg-transparent text-foreground outline-none cursor-pointer max-w-[200px] truncate"
                     >
                       <option value="" className="bg-background text-foreground">
                         Standalone (No Task)
                       </option>
-                      {userTasks.map((t) => (
-                        <option key={t.id} value={t.id} className="bg-background text-foreground">
-                          Task: {t.title}
-                        </option>
-                      ))}
+                      {filteredTasks.map((t) => {
+                        const dateStr = t.date || t.createdAt;
+                        let formattedDate = "";
+                        if (dateStr) {
+                          const d = new Date(dateStr.includes("T") ? dateStr : `${dateStr}T00:00:00`);
+                          if (!isNaN(d.getTime())) {
+                            formattedDate = d.toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                            });
+                          }
+                        }
+                        return (
+                          <option key={t.id} value={t.id} className="bg-background text-foreground">
+                            Task: {t.title}{formattedDate ? ` (${formattedDate})` : ""}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
+
+                  {/* Toggle to include all tasks (including past completed tasks) */}
+                  <label
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none border rounded-lg px-2.5 py-1 bg-muted/40 hover:bg-muted/70 transition-colors"
+                    title="Include all tasks (including completed past tasks) ordered datewise"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={showAllTasks}
+                      onChange={(e) => setShowAllTasks(e.target.checked)}
+                      className="h-3.5 w-3.5 rounded border-muted-foreground text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                    />
+                    <span className="whitespace-nowrap font-medium text-[11px] text-foreground/80">
+                      Include All
+                    </span>
+                  </label>
 
                   <Button
                     onClick={handleSaveActiveNote}

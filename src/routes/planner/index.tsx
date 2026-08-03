@@ -26,7 +26,9 @@ import { Input } from "@/components/ui/input";
 import { TaskFormDialog, type TaskFormValues } from "@/components/task-form-dialog";
 import { ZenFocusModal } from "@/components/zen-focus-modal";
 import { TaskNoteDrawer } from "@/components/notes/TaskNoteDrawer";
+import { addXP } from "@/lib/gamification";
 import { toast } from "sonner";
+
 
 import type { Task } from "@/types";
 
@@ -101,13 +103,21 @@ function Planner() {
       api.createTask({ ...v, status: "pending" }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tasks"] });
-      toast.success("Task created");
+      addXP(15, "Task Created");
+      toast.success("Task created (+15 XP 🎉)");
     },
   });
   const update = useMutation({
     mutationFn: ({ id, patch }: { id: string; patch: Partial<Task> }) => api.updateTask(id, patch),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onSuccess: (data, variables) => {
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      if (variables.patch.status === "completed") {
+        addXP(50, "Task Completed");
+        toast.success("Task completed! (+50 XP 🎉)");
+      }
+    },
   });
+
   const remove = useMutation({
     mutationFn: (id: string) => api.deleteTask(id),
     onSuccess: () => {

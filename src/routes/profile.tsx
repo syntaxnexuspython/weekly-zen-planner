@@ -14,7 +14,7 @@ import { User, Lock, Bell, Mail, ShieldAlert, BadgeCheck, Trophy, Sparkles, Shar
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { getGamificationState, setActiveAvatarBorder, shareStreak, shareAccountabilityInvite, type UserGamificationState } from "@/lib/gamification";
+import { getGamificationState, setActiveAvatarBorder, shareStreak, shareAccountabilityInvite, syncGamificationFromDB, type UserGamificationState } from "@/lib/gamification";
 
 export const Route = createFileRoute("/profile")({
   component: () => (
@@ -46,6 +46,9 @@ function ProfileSettings() {
   const [gamState, setGamState] = useState<UserGamificationState>(() => getGamificationState());
 
   useEffect(() => {
+    syncGamificationFromDB().then((state) => {
+      if (state) setGamState(state);
+    });
     const handleUpdate = () => setGamState(getGamificationState());
     window.addEventListener("gamification_updated", handleUpdate);
     return () => window.removeEventListener("gamification_updated", handleUpdate);
