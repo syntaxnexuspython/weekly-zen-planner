@@ -15,6 +15,7 @@ import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as NotesRouteImport } from './routes/notes'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HabitQuitterRouteImport } from './routes/habit-quitter'
+import { Route as GmailCallbackRouteImport } from './routes/gmail-callback'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -57,6 +58,11 @@ const LoginRoute = LoginRouteImport.update({
 const HabitQuitterRoute = HabitQuitterRouteImport.update({
   id: '/habit-quitter',
   path: '/habit-quitter',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GmailCallbackRoute = GmailCallbackRouteImport.update({
+  id: '/gmail-callback',
+  path: '/gmail-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/gmail-callback': typeof GmailCallbackRoute
   '/habit-quitter': typeof HabitQuitterRoute
   '/login': typeof LoginRoute
   '/notes': typeof NotesRoute
@@ -150,6 +157,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/gmail-callback': typeof GmailCallbackRoute
   '/habit-quitter': typeof HabitQuitterRoute
   '/login': typeof LoginRoute
   '/notes': typeof NotesRoute
@@ -171,6 +179,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/gmail-callback': typeof GmailCallbackRoute
   '/habit-quitter': typeof HabitQuitterRoute
   '/login': typeof LoginRoute
   '/notes': typeof NotesRoute
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/forgot-password'
+    | '/gmail-callback'
     | '/habit-quitter'
     | '/login'
     | '/notes'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/forgot-password'
+    | '/gmail-callback'
     | '/habit-quitter'
     | '/login'
     | '/notes'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/forgot-password'
+    | '/gmail-callback'
     | '/habit-quitter'
     | '/login'
     | '/notes'
@@ -256,6 +268,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   DashboardRoute: typeof DashboardRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  GmailCallbackRoute: typeof GmailCallbackRoute
   HabitQuitterRoute: typeof HabitQuitterRoute
   LoginRoute: typeof LoginRoute
   NotesRoute: typeof NotesRoute
@@ -306,6 +319,13 @@ declare module '@tanstack/react-router' {
       path: '/habit-quitter'
       fullPath: '/habit-quitter'
       preLoaderRoute: typeof HabitQuitterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gmail-callback': {
+      id: '/gmail-callback'
+      path: '/gmail-callback'
+      fullPath: '/gmail-callback'
+      preLoaderRoute: typeof GmailCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -442,6 +462,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   DashboardRoute: DashboardRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  GmailCallbackRoute: GmailCallbackRoute,
   HabitQuitterRoute: HabitQuitterRoute,
   LoginRoute: LoginRoute,
   NotesRoute: NotesRoute,

@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { ApiResponse, AuthSession, Task, User, WeeklyStats, Motivation, Reward, UserStreak, StreakDayStatus, StreakRule, ChatMessage, ChatReply, Feedback, FeedbackType, FeedbackStatus, Announcement } from "@/types";
+import type { ApiResponse, AuthSession, Task, User, WeeklyStats, Motivation, Reward, UserStreak, StreakDayStatus, StreakRule, ChatMessage, ChatReply, Feedback, FeedbackType, FeedbackStatus, Announcement, GmailStatus, ImportantEmailItem } from "@/types";
 import { mockDb } from "./mock-db";
 
 const client = axios.create({
@@ -1155,6 +1155,66 @@ export const api = {
       cancelled,
       completionPct: total === 0 ? 0 : Math.round((completed / total) * 100),
     };
+  },
+
+  async getGmailStatus(): Promise<GmailStatus> {
+    try {
+      const response = await client.get("/api/v1/gmail/status");
+      return response.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async getGmailAuthUrl(): Promise<string> {
+    try {
+      const response = await client.get("/api/v1/gmail/auth-url");
+      return response.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async callbackGmail(code: string): Promise<GmailStatus> {
+    try {
+      const response = await client.post("/api/v1/gmail/callback", { code });
+      return response.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async disconnectGmail(): Promise<void> {
+    try {
+      await client.post("/api/v1/gmail/disconnect");
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async getImportantGmailToday(): Promise<ImportantEmailItem[]> {
+    try {
+      const response = await client.get("/api/v1/gmail/important-today");
+      return response.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async convertGmailToTask(item: {
+    title: string;
+    description?: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    priority?: string;
+  }): Promise<Task> {
+    try {
+      const response = await client.post("/api/v1/gmail/convert-to-task", item);
+      return response.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
   },
 };
 

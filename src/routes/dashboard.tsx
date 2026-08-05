@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { ZenFocusModal } from "@/components/zen-focus-modal";
 import { TaskNoteDrawer } from "@/components/notes/TaskNoteDrawer";
+import { GmailImportantCard } from "@/components/gmail-important-card";
 import { addXP } from "@/lib/gamification";
 import { toast } from "sonner";
 import type { Task, Reward, StreakDayStatus } from "@/types";
@@ -479,6 +480,9 @@ function Dashboard() {
         <StatCard label="Freezes" value={`${streak?.available_freezes ?? 0}`} icon={<Snowflake className="h-4 w-4 text-sky-500" />} />
         <StatCard label="Completion" value={`${stats.completionPct}%`} icon={<TrendingUp className="h-4 w-4 text-primary" />} />
       </section>
+
+      {/* Gmail & Groq AI Important Messages Card */}
+      <GmailImportantCard />
 
       {/* Streak Activity Heatmap Grid */}
       <Card className="w-full">

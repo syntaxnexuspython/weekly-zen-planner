@@ -217,4 +217,22 @@ export interface NoteUpdatePayload {
   tags?: string[];
   is_pinned?: boolean;
   is_archived?: boolean;
+}
+
+export interface GmailStatus {
+  connected: boolean;
+  email?: string | null;
+}
+
+export interface ImportantEmailItem {
+  id: string;
+  sender: string;
+  subject: string;
+  snippet: string;
+  date: string;
+  urgency: "high" | "medium" | "low";
+  suggested_task_title: string;
+  suggested_task_description: string;
+  suggested_start_time: string;
+  suggested_end_time: string;
 }
