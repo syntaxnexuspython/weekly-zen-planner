@@ -27,6 +27,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminRewardsRouteImport } from './routes/admin/rewards'
 import { Route as AdminMotivationsRouteImport } from './routes/admin/motivations'
 import { Route as AdminHabitsRouteImport } from './routes/admin/habits'
+import { Route as AdminGmailSettingsRouteImport } from './routes/admin/gmail-settings'
 import { Route as AdminFeedbackRouteImport } from './routes/admin/feedback'
 import { Route as AdminAnnouncementsRouteImport } from './routes/admin/announcements'
 
@@ -120,6 +121,11 @@ const AdminHabitsRoute = AdminHabitsRouteImport.update({
   path: '/habits',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminGmailSettingsRoute = AdminGmailSettingsRouteImport.update({
+  id: '/gmail-settings',
+  path: '/gmail-settings',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminFeedbackRoute = AdminFeedbackRouteImport.update({
   id: '/feedback',
   path: '/feedback',
@@ -145,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/feedback': typeof AdminFeedbackRoute
+  '/admin/gmail-settings': typeof AdminGmailSettingsRoute
   '/admin/habits': typeof AdminHabitsRoute
   '/admin/motivations': typeof AdminMotivationsRoute
   '/admin/rewards': typeof AdminRewardsRoute
@@ -165,6 +172,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/feedback': typeof AdminFeedbackRoute
+  '/admin/gmail-settings': typeof AdminGmailSettingsRoute
   '/admin/habits': typeof AdminHabitsRoute
   '/admin/motivations': typeof AdminMotivationsRoute
   '/admin/rewards': typeof AdminRewardsRoute
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/feedback': typeof AdminFeedbackRoute
+  '/admin/gmail-settings': typeof AdminGmailSettingsRoute
   '/admin/habits': typeof AdminHabitsRoute
   '/admin/motivations': typeof AdminMotivationsRoute
   '/admin/rewards': typeof AdminRewardsRoute
@@ -212,6 +221,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/admin/announcements'
     | '/admin/feedback'
+    | '/admin/gmail-settings'
     | '/admin/habits'
     | '/admin/motivations'
     | '/admin/rewards'
@@ -232,6 +242,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/admin/announcements'
     | '/admin/feedback'
+    | '/admin/gmail-settings'
     | '/admin/habits'
     | '/admin/motivations'
     | '/admin/rewards'
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/admin/announcements'
     | '/admin/feedback'
+    | '/admin/gmail-settings'
     | '/admin/habits'
     | '/admin/motivations'
     | '/admin/rewards'
@@ -405,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminHabitsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/gmail-settings': {
+      id: '/admin/gmail-settings'
+      path: '/gmail-settings'
+      fullPath: '/admin/gmail-settings'
+      preLoaderRoute: typeof AdminGmailSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/feedback': {
       id: '/admin/feedback'
       path: '/feedback'
@@ -425,6 +444,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
   AdminFeedbackRoute: typeof AdminFeedbackRoute
+  AdminGmailSettingsRoute: typeof AdminGmailSettingsRoute
   AdminHabitsRoute: typeof AdminHabitsRoute
   AdminMotivationsRoute: typeof AdminMotivationsRoute
   AdminRewardsRoute: typeof AdminRewardsRoute
@@ -435,6 +455,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnnouncementsRoute: AdminAnnouncementsRoute,
   AdminFeedbackRoute: AdminFeedbackRoute,
+  AdminGmailSettingsRoute: AdminGmailSettingsRoute,
   AdminHabitsRoute: AdminHabitsRoute,
   AdminMotivationsRoute: AdminMotivationsRoute,
   AdminRewardsRoute: AdminRewardsRoute,

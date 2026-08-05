@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Flame, Award, Sparkles, ArrowRight, MessageSquare, Megaphone, ShieldAlert } from "lucide-react";
+import { Users, Flame, Award, Sparkles, ArrowRight, MessageSquare, Megaphone, ShieldAlert, Mail } from "lucide-react";
 import type { ReactNode } from "react";
 
 export const Route = createFileRoute("/admin/")({
@@ -201,6 +201,33 @@ function AdminOverviewDashboard() {
             <Link to="/admin/habits" className="w-full">
               <button className="w-full inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-semibold h-9 px-4 border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors">
                 Configure Limit <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Gmail AI System Settings Section */}
+        <Card className="flex flex-col justify-between hover:shadow-md transition-shadow">
+          <CardHeader>
+            <div className="flex items-center justify-between mb-2">
+              <div className="rounded-full bg-indigo-500/10 p-2 text-indigo-600">
+                <Mail className="h-5 w-5" />
+              </div>
+              <Badge variant="secondary">System Toggle</Badge>
+            </div>
+            <CardTitle className="text-base">Gmail AI Integration</CardTitle>
+            <CardDescription>
+              Globally enable or disable Google Gmail connection and Groq AI email analysis.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0 flex-1 flex flex-col justify-between">
+            <div className="text-xs text-muted-foreground mb-4 space-y-1">
+              <div>• Feature: <span className="font-semibold text-indigo-600">Gmail + Groq AI</span></div>
+              <div>• Global Control: <span className="font-semibold text-foreground">System-wide Switch</span></div>
+            </div>
+            <Link to="/admin/gmail-settings" className="w-full">
+              <button className="w-full inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-semibold h-9 px-4 border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors">
+                Gmail Settings <ArrowRight className="h-3.5 w-3.5" />
               </button>
             </Link>
           </CardContent>

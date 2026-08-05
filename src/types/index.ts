@@ -222,6 +222,7 @@ export interface NoteUpdatePayload {
 export interface GmailStatus {
   connected: boolean;
   email?: string | null;
+  feature_enabled: boolean;
 }
 
 export interface ImportantEmailItem {

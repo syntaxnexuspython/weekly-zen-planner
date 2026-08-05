@@ -1216,6 +1216,24 @@ export const api = {
       throw new Error(e.response?.data?.message || e.message);
     }
   },
+
+  async getAdminGmailFeatureToggle(): Promise<{ feature_enabled: boolean }> {
+    try {
+      const response = await client.get("/api/v1/gmail/admin/toggle");
+      return response.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async updateAdminGmailFeatureToggle(feature_enabled: boolean): Promise<{ feature_enabled: boolean }> {
+    try {
+      const response = await client.patch("/api/v1/gmail/admin/toggle", { feature_enabled });
+      return response.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
 };
 
 const MOTIVATIONS = [
