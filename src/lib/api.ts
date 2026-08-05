@@ -1146,11 +1146,13 @@ export const api = {
     const completed = tasks.filter((t) => t.status === "completed").length;
     const pending = tasks.filter((t) => t.status === "pending").length;
     const skipped = tasks.filter((t) => t.status === "skipped").length;
+    const cancelled = tasks.filter((t) => t.status === "cancelled").length;
     return {
       totalTasks: total,
       completed,
       pending,
       skipped,
+      cancelled,
       completionPct: total === 0 ? 0 : Math.round((completed / total) * 100),
     };
   },

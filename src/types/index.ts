@@ -34,7 +34,7 @@ export interface Task {
   endTime: string; // HH:mm
   priority: "high" | "medium" | "low";
   isOptional: boolean;
-  status: "pending" | "completed" | "skipped";
+  status: "pending" | "completed" | "skipped" | "cancelled";
   completionNotes?: string;
   completedDate?: string;
   createdAt: string;
@@ -54,6 +54,7 @@ export interface WeeklyStats {
   completed: number;
   pending: number;
   skipped: number;
+  cancelled: number;
   completionPct: number;
 }
 export interface BaseUser{

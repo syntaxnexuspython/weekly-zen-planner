@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   Circle,
   SkipForward,
+  XCircle,
   Calendar,
   Clock,
   AlertCircle,
@@ -117,6 +118,18 @@ export function PendingTasksSheet({ open, onOpenChange }: PendingTasksSheetProps
     }
   };
 
+  const handleCancel = async (task: Task) => {
+    try {
+      await updateTaskMutation.mutateAsync({
+        id: task.id,
+        patch: { status: "cancelled" },
+      });
+      toast.success(`Task "${task.title}" cancelled`);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to cancel task");
+    }
+  };
+
   const handleReschedule = async (task: Task, targetDate: "today" | "tomorrow") => {
     const newDate = new Date();
     if (targetDate === "tomorrow") {
@@ -208,6 +221,7 @@ export function PendingTasksSheet({ open, onOpenChange }: PendingTasksSheetProps
                       formatDate={formatTaskDate}
                       onComplete={handleComplete}
                       onSkip={handleSkip}
+                      onCancel={handleCancel}
                       onReschedule={handleReschedule}
                     />
                   ))}
@@ -231,6 +245,7 @@ export function PendingTasksSheet({ open, onOpenChange }: PendingTasksSheetProps
                       formatDate={formatTaskDate}
                       onComplete={handleComplete}
                       onSkip={handleSkip}
+                      onCancel={handleCancel}
                       onReschedule={handleReschedule}
                     />
                   ))}
@@ -254,6 +269,7 @@ export function PendingTasksSheet({ open, onOpenChange }: PendingTasksSheetProps
                       formatDate={formatTaskDate}
                       onComplete={handleComplete}
                       onSkip={handleSkip}
+                      onCancel={handleCancel}
                       onReschedule={handleReschedule}
                     />
                   ))}
@@ -277,6 +293,7 @@ interface TaskItemProps {
   formatDate: (d: string) => string;
   onComplete: (t: Task) => void;
   onSkip: (t: Task) => void;
+  onCancel: (t: Task) => void;
   onReschedule: (t: Task, target: "today" | "tomorrow") => void;
 }
 
@@ -286,6 +303,7 @@ function TaskItem({
   formatDate,
   onComplete,
   onSkip,
+  onCancel,
   onReschedule,
 }: TaskItemProps) {
   return (
@@ -359,6 +377,13 @@ function TaskItem({
             >
               <SkipForward className="mr-2 h-4 w-4" />
               Skip Task
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onCancel(task)}
+              className="cursor-pointer text-rose-600 dark:text-rose-400 focus:bg-rose-50 dark:focus:bg-rose-950/20"
+            >
+              <XCircle className="mr-2 h-4 w-4" />
+              Cancel Task
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

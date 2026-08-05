@@ -12,7 +12,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Plus, Trash2, Pencil, CheckCircle2, Circle, SkipForward, Clock, ArrowLeft, Sparkles, Repeat, Link as LinkIcon, CheckSquare, FileText
+  Plus, Trash2, Pencil, CheckCircle2, Circle, SkipForward, XCircle, Clock, ArrowLeft, Sparkles, Repeat, Link as LinkIcon, CheckSquare, FileText
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter
@@ -187,6 +187,8 @@ function DayPlanner() {
                   >
                     {t.status === "completed" ? (
                       <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                    ) : t.status === "cancelled" ? (
+                      <XCircle className="h-5 w-5 text-rose-500" />
                     ) : t.status === "skipped" ? (
                       <SkipForward className="h-5 w-5 text-muted-foreground" />
                     ) : (
@@ -195,7 +197,7 @@ function DayPlanner() {
                   </button>
                   
                   <div className="flex-1 min-w-0 space-y-1.5">
-                    <div className={`text-base font-semibold tracking-tight ${t.status === "completed" ? "line-through text-muted-foreground" : ""}`}>
+                    <div className={`text-base font-semibold tracking-tight ${t.status === "completed" || t.status === "cancelled" ? "line-through text-muted-foreground" : ""}`}>
                       {t.title}
                     </div>
                     
@@ -213,6 +215,11 @@ function DayPlanner() {
                       <Badge variant="outline" className={priColor[t.priority]}>
                         {t.priority} priority
                       </Badge>
+                      {t.status === "cancelled" && (
+                        <Badge variant="outline" className="bg-rose-500/10 text-rose-600 border-rose-500/20">
+                          cancelled
+                        </Badge>
+                      )}
                       {t.isOptional && <Badge variant="secondary">optional</Badge>}
                       {t.recurrence && t.recurrence !== "none" && (
                         <Badge variant="outline" className="gap-1 bg-primary/5 text-primary border-primary/20">
@@ -254,6 +261,41 @@ function DayPlanner() {
                           <div className="text-xs text-emerald-700 bg-emerald-500/10 rounded-md p-2.5 border border-emerald-500/20 italic">
                             Completion Note: {t.completionNotes}
                           </div>
+                        )}
+                      </div>
+                    )}
+
+                    {t.status !== "completed" && (
+                      <div className="flex items-center gap-2 pt-2 text-xs">
+                        {t.status !== "skipped" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-muted-foreground hover:text-foreground cursor-pointer px-2"
+                            onClick={() => update.mutate({ id: t.id, patch: { status: "skipped" } })}
+                          >
+                            Skip Task
+                          </Button>
+                        )}
+                        {t.status !== "cancelled" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 cursor-pointer px-2 font-medium"
+                            onClick={() => update.mutate({ id: t.id, patch: { status: "cancelled" } })}
+                          >
+                            Cancel Task
+                          </Button>
+                        )}
+                        {(t.status === "skipped" || t.status === "cancelled") && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-primary hover:underline cursor-pointer px-2 font-medium"
+                            onClick={() => update.mutate({ id: t.id, patch: { status: "pending" } })}
+                          >
+                            Restore to Pending
+                          </Button>
                         )}
                       </div>
                     )}

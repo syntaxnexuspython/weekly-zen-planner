@@ -29,7 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  CheckCircle2, Circle, Flame, Snowflake, ListChecks, Clock,
+  CheckCircle2, Circle, XCircle, SkipForward, Flame, Snowflake, ListChecks, Clock,
   Sparkles, Star, TrendingUp, Megaphone, Volume2, VolumeX, CheckSquare, Repeat, FileText
 } from "lucide-react";
 import { ZenFocusModal } from "@/components/zen-focus-modal";
@@ -710,12 +710,18 @@ function TaskList({
         ) : tasks.map((t) => (
           <div key={t.id} className="flex items-start gap-3 rounded-lg border p-3 hover:bg-accent/40 group">
             <button onClick={() => onToggle(t)} className="mt-0.5">
-              {t.status === "completed"
-                ? <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                : <Circle className="h-5 w-5 text-muted-foreground" />}
+              {t.status === "completed" ? (
+                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              ) : t.status === "cancelled" ? (
+                <XCircle className="h-5 w-5 text-rose-500" />
+              ) : t.status === "skipped" ? (
+                <SkipForward className="h-5 w-5 text-muted-foreground" />
+              ) : (
+                <Circle className="h-5 w-5 text-muted-foreground" />
+              )}
             </button>
             <div className="flex-1 min-w-0">
-              <div className={`text-sm font-medium ${t.status === "completed" ? "line-through text-muted-foreground" : ""}`}>
+              <div className={`text-sm font-medium ${t.status === "completed" || t.status === "cancelled" ? "line-through text-muted-foreground" : ""}`}>
                 {t.title}
                 {t.specializedTitle && (
                   <span className="ml-2 text-xs font-normal text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
@@ -727,6 +733,9 @@ function TaskList({
                 <Clock className="h-3 w-3" />
                 {t.startTime}–{t.endTime}
                 <Badge variant="outline" className={priColor[t.priority]}>{t.priority}</Badge>
+                {t.status === "cancelled" && (
+                  <Badge variant="outline" className="text-[10px] bg-rose-500/10 text-rose-600 border-rose-500/20">cancelled</Badge>
+                )}
                 {t.isOptional && <Badge variant="secondary">optional</Badge>}
                 {t.recurrence && t.recurrence !== "none" && (
                   <Badge variant="outline" className="gap-1 text-[10px] bg-primary/5 text-primary border-primary/20">

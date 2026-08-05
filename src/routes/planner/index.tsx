@@ -12,7 +12,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Plus, Trash2, Pencil, CheckCircle2, Circle, SkipForward, Clock,
+  Plus, Trash2, Pencil, CheckCircle2, Circle, SkipForward, XCircle, Clock,
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, Sparkles, Repeat, Link as LinkIcon, CheckSquare, FileText
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -252,14 +252,18 @@ function Planner() {
                         }}
                         title="Toggle complete"
                       >
-                        {t.status === "completed"
-                          ? <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                          : t.status === "skipped"
-                          ? <SkipForward className="h-4 w-4 text-muted-foreground" />
-                          : <Circle className="h-4 w-4 text-muted-foreground" />}
+                        {t.status === "completed" ? (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        ) : t.status === "cancelled" ? (
+                          <XCircle className="h-4 w-4 text-rose-500" />
+                        ) : t.status === "skipped" ? (
+                          <SkipForward className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Circle className="h-4 w-4 text-muted-foreground" />
+                        )}
                       </button>
                       <div className="flex-1 min-w-0">
-                        <div className={`font-medium ${t.status === "completed" ? "line-through text-muted-foreground" : ""}`}>
+                        <div className={`font-medium ${t.status === "completed" || t.status === "cancelled" ? "line-through text-muted-foreground" : ""}`}>
                           {t.title}
                           {t.specializedTitle && (
                             <span className="ml-2 text-xs font-normal text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
@@ -271,6 +275,9 @@ function Planner() {
                           <Clock className="h-3 w-3" />
                           {t.startTime}–{t.endTime}
                           <Badge variant="outline" className={priColor[t.priority]}>{t.priority}</Badge>
+                          {t.status === "cancelled" && (
+                            <Badge variant="outline" className="text-[10px] bg-rose-500/10 text-rose-600 border-rose-500/20">cancelled</Badge>
+                          )}
                           {t.isOptional && <Badge variant="secondary">optional</Badge>}
                           {t.recurrence && t.recurrence !== "none" && (
                             <Badge variant="outline" className="gap-1 text-[10px] bg-primary/5 text-primary border-primary/20">
@@ -330,20 +337,42 @@ function Planner() {
                       </div>
 
                     </div>
-                    {t.status !== "skipped" && t.status !== "completed" && (
-                      <div className="mt-2 flex items-center justify-between">
-                        <button
-                          className="text-[10px] uppercase tracking-wide text-muted-foreground hover:text-foreground"
-                          onClick={() => update.mutate({ id: t.id, patch: { status: "skipped" } })}
-                        >
-                          Skip
-                        </button>
-                        <button
-                          className="text-[10px] font-semibold text-primary hover:underline flex items-center gap-1"
-                          onClick={() => setFocusTask(t)}
-                        >
-                          <Sparkles className="h-3 w-3" /> Focus Mode
-                        </button>
+                    {t.status !== "completed" && (
+                      <div className="mt-2 flex items-center justify-between gap-2 border-t pt-1.5 border-dashed">
+                        <div className="flex items-center gap-2">
+                          {t.status !== "skipped" && (
+                            <button
+                              className="text-[10px] uppercase tracking-wide text-muted-foreground hover:text-foreground cursor-pointer"
+                              onClick={() => update.mutate({ id: t.id, patch: { status: "skipped" } })}
+                            >
+                              Skip
+                            </button>
+                          )}
+                          {t.status !== "cancelled" && (
+                            <button
+                              className="text-[10px] uppercase tracking-wide text-rose-500 hover:text-rose-600 font-medium cursor-pointer"
+                              onClick={() => update.mutate({ id: t.id, patch: { status: "cancelled" } })}
+                            >
+                              Cancel
+                            </button>
+                          )}
+                          {(t.status === "skipped" || t.status === "cancelled") && (
+                            <button
+                              className="text-[10px] uppercase tracking-wide text-primary hover:underline font-medium cursor-pointer"
+                              onClick={() => update.mutate({ id: t.id, patch: { status: "pending" } })}
+                            >
+                              Restore
+                            </button>
+                          )}
+                        </div>
+                        {t.status === "pending" && (
+                          <button
+                            className="text-[10px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                            onClick={() => setFocusTask(t)}
+                          >
+                            <Sparkles className="h-3 w-3" /> Focus Mode
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
