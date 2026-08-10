@@ -291,9 +291,32 @@ function Planner() {
                             </Badge>
                           )}
                           {t.attachments && t.attachments.length > 0 && (
-                            <Badge variant="outline" className="gap-1 text-[10px]">
-                              <LinkIcon className="h-2.5 w-2.5" /> {t.attachments.length}
-                            </Badge>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Badge variant="outline" className="gap-1 text-[10px] cursor-pointer hover:bg-accent transition-colors">
+                                  <LinkIcon className="h-2.5 w-2.5 text-primary" /> {t.attachments.length} link{t.attachments.length > 1 ? "s" : ""}
+                                </Badge>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-64 p-2 text-xs space-y-1.5" align="start" onClick={(e) => e.stopPropagation()}>
+                                <div className="font-semibold text-[10px] text-muted-foreground uppercase tracking-wider px-1">
+                                  Task Attachments & Links
+                                </div>
+                                <div className="space-y-1 max-h-40 overflow-y-auto">
+                                  {t.attachments.map((att) => (
+                                    <a
+                                      key={att.id}
+                                      href={att.url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="flex items-center gap-1.5 p-1.5 rounded hover:bg-accent text-primary hover:underline transition-colors border border-border/40 bg-accent/10"
+                                    >
+                                      <LinkIcon className="h-3 w-3 shrink-0 text-primary" />
+                                      <span className="truncate max-w-[200px]">{att.name || att.url}</span>
+                                    </a>
+                                  ))}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
                           )}
                         </div>
                         {t.status === "completed" && (

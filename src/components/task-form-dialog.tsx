@@ -107,7 +107,20 @@ export function TaskFormDialog({
         attachments: [],
       }));
     }
+    // Reset input fields when dialog opens/resets
+    setLinkUrl("");
+    setLinkName("");
+    setNewSubtaskTitle("");
   }, [initial, defaultDate, open]);
+
+  const formatUrl = (url: string) => {
+    const trimmed = url.trim();
+    if (!trimmed) return "";
+    if (!/^https?:\/\//i.test(trimmed) && !/^(mailto|tel):/i.test(trimmed)) {
+      return `https://${trimmed}`;
+    }
+    return trimmed;
+  };
 
   const handleAddSubtask = () => {
     if (!newSubtaskTitle.trim()) return;
@@ -132,11 +145,12 @@ export function TaskFormDialog({
 
   const handleAddAttachment = () => {
     if (!linkUrl.trim()) return;
+    const formatted = formatUrl(linkUrl);
     const newAttachment: TaskAttachment = {
       id: Math.random().toString(36).substring(2, 9),
       type: "link",
-      url: linkUrl.trim(),
-      name: linkName.trim() || linkUrl.trim(),
+      url: formatted,
+      name: linkName.trim() || formatted,
     };
     setValues((prev) => ({
       ...prev,
@@ -181,8 +195,33 @@ export function TaskFormDialog({
     e.preventDefault();
     setBusy(true);
     try {
+      let finalSubtasks = values.subtasks ? [...values.subtasks] : [];
+      if (newSubtaskTitle.trim()) {
+        finalSubtasks.push({
+          id: Math.random().toString(36).substring(2, 9),
+          title: newSubtaskTitle.trim(),
+          completed: false,
+        });
+        setNewSubtaskTitle("");
+      }
+
+      let finalAttachments = values.attachments ? [...values.attachments] : [];
+      if (linkUrl.trim()) {
+        const formatted = formatUrl(linkUrl);
+        finalAttachments.push({
+          id: Math.random().toString(36).substring(2, 9),
+          type: "link",
+          url: formatted,
+          name: linkName.trim() || formatted,
+        });
+        setLinkUrl("");
+        setLinkName("");
+      }
+
       const payload: TaskFormValues = {
         ...values,
+        subtasks: finalSubtasks,
+        attachments: finalAttachments,
         specializedTitle: values.specializedTitle?.trim() || undefined,
         recurrenceEndDate:
           values.recurrence && values.recurrence !== "none" && values.recurrenceEndDate?.trim()

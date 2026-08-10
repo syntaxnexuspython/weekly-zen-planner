@@ -236,17 +236,20 @@ function DayPlanner() {
 
                     {t.attachments && t.attachments.length > 0 && (
                       <div className="flex flex-wrap gap-2 pt-1">
-                        {t.attachments.map((att) => (
-                          <a
-                            key={att.id}
-                            href={att.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline bg-primary/5 px-2 py-1 rounded border border-primary/10"
-                          >
-                            <LinkIcon className="h-3 w-3" /> {att.name || att.url}
-                          </a>
-                        ))}
+                        {t.attachments.map((att) => {
+                          const href = /^https?:\/\//i.test(att.url) || /^(mailto|tel):/i.test(att.url) ? att.url : `https://${att.url}`;
+                          return (
+                            <a
+                              key={att.id}
+                              href={href}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline bg-primary/5 px-2 py-1 rounded border border-primary/10"
+                            >
+                              <LinkIcon className="h-3 w-3" /> {att.name || att.url}
+                            </a>
+                          );
+                        })}
                       </div>
                     )}
 
