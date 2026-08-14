@@ -334,7 +334,7 @@ export function ChatbotAssistant() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-40">
+    <div className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40">
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <Button
