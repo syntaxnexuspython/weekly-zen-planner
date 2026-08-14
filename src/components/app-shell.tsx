@@ -10,18 +10,23 @@ import {
   MessageSquare,
   ShieldCheck,
   FileText,
+  Search,
+  Keyboard,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { type ReactNode, useEffect, useState, useMemo } from "react";
 import { ChatbotAssistant } from "./chatbot-assistant";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Task } from "@/types";
-import { api } from "@/lib/api";
+import { api, ymd } from "@/lib/api";
 import { PendingTasksSheet } from "./pending-tasks-sheet";
 import { FeedbackDialog } from "./feedback-dialog";
 import { ThemeToggle } from "./theme-toggle";
+import { CommandPalette } from "./command-palette";
+import { KeyboardShortcutsDialog } from "./keyboard-shortcuts-dialog";
+import { TaskFormDialog, type TaskFormValues } from "./task-form-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { syncGamificationFromDB } from "@/lib/gamification";
+import { addXP, syncGamificationFromDB } from "@/lib/gamification";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { session, logout } = useAuth();
@@ -41,6 +46,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const [pendingOpen, setPendingOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [newTaskOpen, setNewTaskOpen] = useState(false);
 
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks", "all-pending"],
@@ -51,6 +59,63 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pendingCount = useMemo(() => {
     return tasks.filter((t) => t.status === "pending").length;
   }, [tasks]);
+
+  const createTaskMutation = useMutation({
+    mutationFn: (values: TaskFormValues) =>
+      api.createTask({ ...values, status: "pending" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["all-tasks"] });
+      addXP(15, "Task Created");
+      toast.success("Task created! (+15 XP 🎉)");
+      setNewTaskOpen(false);
+    },
+  });
+
+  // Global Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isEditable =
+        target.isContentEditable ||
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT";
+
+      // Command Palette (Ctrl+K or Cmd+K)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCommandPaletteOpen((prev) => !prev);
+        return;
+      }
+
+      if (isEditable) return;
+
+      // Fast Navigation & Action keys
+      if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        setNewTaskOpen(true);
+      } else if (e.key === "p" || e.key === "P") {
+        e.preventDefault();
+        navigate({ to: "/planner" });
+      } else if (e.key === "d" || e.key === "D") {
+        e.preventDefault();
+        navigate({ to: "/dashboard" });
+      } else if (e.key === "h" || e.key === "H") {
+        e.preventDefault();
+        navigate({ to: "/habit-quitter" });
+      } else if (e.key === "m" || e.key === "M") {
+        e.preventDefault();
+        navigate({ to: "/notes" });
+      } else if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+        e.preventDefault();
+        setShortcutsOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [navigate]);
 
   useEffect(() => {
     if (!session?.access_token) return;
@@ -73,14 +138,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         const task: Task = JSON.parse(event.data);
         console.log("Task created via SSE:", task);
 
-        // Optimistically update active task lists in cache to make UI update instantly
         queryClient.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (oldTasks) => {
           if (!oldTasks) return oldTasks;
           if (oldTasks.some((t) => t.id === task.id)) return oldTasks;
           return [...oldTasks, task].sort((a, b) => a.startTime.localeCompare(b.startTime));
         });
 
-        // Trigger refetch of tasks and streaks to keep everything perfectly in sync
         queryClient.invalidateQueries({ queryKey: ["tasks"] });
         queryClient.invalidateQueries({ queryKey: ["streak"] });
         queryClient.invalidateQueries({ queryKey: ["streakHistory"] });
@@ -161,7 +224,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-background text-foreground">
       {/* Top Header */}
       <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 md:py-3">
           {/* Logo & Brand */}
           <div
             className="flex items-center gap-2 font-semibold cursor-pointer select-none"
@@ -177,95 +240,131 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="tracking-tight">Zen Planner</span>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
-            {isAdmin ? (
+          {/* Desktop Search & Navigation */}
+          <div className="hidden md:flex items-center gap-3">
+            {/* Quick Command Trigger */}
+            <button
+              onClick={() => setCommandPaletteOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground bg-accent/40 hover:bg-accent hover:text-foreground rounded-lg border border-border/50 transition-colors cursor-pointer"
+              title="Search & Commands (Ctrl+K)"
+            >
+              <Search className="h-3.5 w-3.5" />
+              <span>Search or command...</span>
+              <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-background border border-border shadow-xs">
+                Ctrl K
+              </kbd>
+            </button>
+
+            <nav className="flex items-center gap-1">
+              {isAdmin ? (
+                <Link
+                  to="/admin"
+                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent transition-colors"
+                  activeProps={{ className: "bg-accent text-primary" }}
+                >
+                  <Shield className="h-4 w-4" /> Admin
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to="/dashboard"
+                    className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent transition-colors"
+                    activeProps={{ className: "bg-accent text-primary" }}
+                  >
+                    <LayoutDashboard className="h-4 w-4" /> <span>Dashboard</span>
+                  </Link>
+                  <Link
+                    to="/planner"
+                    className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent transition-colors"
+                    activeProps={{ className: "bg-accent text-primary" }}
+                  >
+                    <ListTodo className="h-4 w-4" /> <span>Planner</span>
+                  </Link>
+                  <Link
+                    to="/habit-quitter"
+                    className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent transition-colors"
+                    activeProps={{ className: "bg-accent text-primary" }}
+                  >
+                    <ShieldCheck className="h-4 w-4" /> <span>Habit Vault</span>
+                  </Link>
+                  <Link
+                    to="/notes"
+                    className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent transition-colors"
+                    activeProps={{ className: "bg-accent text-primary" }}
+                  >
+                    <FileText className="h-4 w-4 text-indigo-500" /> <span>Notes</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => setPendingOpen(true)}
+                    className="relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent cursor-pointer focus:outline-none transition-colors"
+                  >
+                    <Inbox className="h-4 w-4" />
+                    <span>Pending</span>
+                    {pendingCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm animate-pulse">
+                        {pendingCount > 99 ? "99+" : pendingCount}
+                      </span>
+                    )}
+                  </button>
+                </>
+              )}
+
+              {!isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setFeedbackOpen(true)}
+                  className="relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent cursor-pointer focus:outline-none transition-colors"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  <span>Feedback</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setShortcutsOpen(true)}
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
+                title="Keyboard Shortcuts (?)"
+              >
+                <Keyboard className="h-4 w-4" />
+              </button>
+
               <Link
-                to="/admin"
+                to="/profile"
                 className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent transition-colors"
                 activeProps={{ className: "bg-accent text-primary" }}
               >
-                <Shield className="h-4 w-4" /> Admin
+                <User className="h-4 w-4" /> <span>Profile</span>
               </Link>
-            ) : (
-              <>
-                <Link
-                  to="/dashboard"
-                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent transition-colors"
-                  activeProps={{ className: "bg-accent text-primary" }}
-                >
-                  <LayoutDashboard className="h-4 w-4" /> <span>Dashboard</span>
-                </Link>
-                <Link
-                  to="/planner"
-                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent transition-colors"
-                  activeProps={{ className: "bg-accent text-primary" }}
-                >
-                  <ListTodo className="h-4 w-4" /> <span>Planner</span>
-                </Link>
-                <Link
-                  to="/habit-quitter"
-                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent transition-colors"
-                  activeProps={{ className: "bg-accent text-primary" }}
-                >
-                  <ShieldCheck className="h-4 w-4" /> <span>Habit Vault</span>
-                </Link>
-                <Link
-                  to="/notes"
-                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent transition-colors"
-                  activeProps={{ className: "bg-accent text-primary" }}
-                >
-                  <FileText className="h-4 w-4 text-indigo-500" /> <span>Notes</span>
-                </Link>
-
-                <button
-                  type="button"
-                  onClick={() => setPendingOpen(true)}
-                  className="relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent cursor-pointer focus:outline-none transition-colors"
-                >
-                  <Inbox className="h-4 w-4" />
-                  <span>Pending</span>
-                  {pendingCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm animate-pulse">
-                      {pendingCount > 99 ? "99+" : pendingCount}
-                    </span>
-                  )}
-                </button>
-              </>
-            )}
-            {!isAdmin && (
-              <button
-                type="button"
-                onClick={() => setFeedbackOpen(true)}
-                className="relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent cursor-pointer focus:outline-none transition-colors"
+              <ThemeToggle />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  logout();
+                  router.navigate({ to: "/login" });
+                }}
+                className="cursor-pointer"
               >
-                <MessageSquare className="h-4 w-4" />
-                <span>Feedback</span>
-              </button>
-            )}
-            <Link
-              to="/profile"
-              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent transition-colors"
-              activeProps={{ className: "bg-accent text-primary" }}
-            >
-              <User className="h-4 w-4" /> <span>Profile</span>
-            </Link>
-            <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                logout();
-                router.navigate({ to: "/login" });
-              }}
-              className="cursor-pointer"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </nav>
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </nav>
+          </div>
 
           {/* Mobile Clean Top Header Actions */}
-          <div className="flex md:hidden items-center gap-1.5">
+          <div className="flex md:hidden items-center gap-1">
+            {/* Search / Command Palette Button */}
+            <button
+              type="button"
+              onClick={() => setCommandPaletteOpen(true)}
+              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors focus:outline-none"
+              title="Search & Commands"
+            >
+              <Search className="h-5 w-5" />
+            </button>
+
             {/* Pending Inbox Button */}
             <button
               type="button"
@@ -318,6 +417,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <User className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Profile & Settings</span>
                   </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => setShortcutsOpen(true)}
+                  className="flex items-center gap-2.5 px-2.5 py-2 cursor-pointer rounded-md"
+                >
+                  <Keyboard className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Keyboard Shortcuts</span>
                 </DropdownMenuItem>
 
                 {!isAdmin && (
@@ -483,6 +590,30 @@ export function AppShell({ children }: { children: ReactNode }) {
           </>
         )}
       </nav>
+
+      {/* Global Command Palette */}
+      <CommandPalette
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+        onNewTask={() => setNewTaskOpen(true)}
+        onOpenPending={() => setPendingOpen(true)}
+        onOpenFeedback={() => setFeedbackOpen(true)}
+        onOpenShortcuts={() => setShortcutsOpen(true)}
+      />
+
+      {/* Keyboard Shortcuts Dialog */}
+      <KeyboardShortcutsDialog
+        open={shortcutsOpen}
+        onOpenChange={setShortcutsOpen}
+      />
+
+      {/* Global Task Creation Modal */}
+      <TaskFormDialog
+        open={newTaskOpen}
+        onOpenChange={setNewTaskOpen}
+        defaultDate={ymd(new Date())}
+        onSubmit={(values) => createTaskMutation.mutateAsync(values)}
+      />
 
       {/* Sheets & Dialogs */}
       <PendingTasksSheet open={pendingOpen} onOpenChange={setPendingOpen} />

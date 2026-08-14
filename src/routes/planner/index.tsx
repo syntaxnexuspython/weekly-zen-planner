@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Plus, Trash2, Pencil, CheckCircle2, Circle, SkipForward, XCircle, Clock,
-  ChevronLeft, ChevronRight, Calendar as CalendarIcon, Sparkles, Repeat, Link as LinkIcon, CheckSquare, FileText
+  ChevronLeft, ChevronRight, Calendar as CalendarIcon, Sparkles, Repeat, Link as LinkIcon, CheckSquare, FileText, GripVertical
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -89,6 +90,8 @@ function Planner() {
   const [completedDateVal, setCompletedDateVal] = useState("");
   const [focusTask, setFocusTask] = useState<Task | null>(null);
   const [noteTask, setNoteTask] = useState<Task | null>(null);
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dragOverDay, setDragOverDay] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -221,8 +224,51 @@ function Planner() {
           const dayStr = ymd(d);
           const list = weekTasks.filter((t) => t.date === dayStr).sort((a, b) => a.startTime.localeCompare(b.startTime));
           const isToday = dayStr === ymd(new Date());
+          const isOver = dragOverDay === dayStr;
+
           return (
-            <Card key={dayStr} className={isToday ? "border-primary" : ""}>
+            <Card
+              key={dayStr}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                if (dragOverDay !== dayStr) {
+                  setDragOverDay(dayStr);
+                }
+              }}
+              onDragLeave={(e) => {
+                if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                if (dragOverDay === dayStr) {
+                  setDragOverDay(null);
+                }
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                const taskId = e.dataTransfer.getData("text/plain") || draggedTaskId;
+                setDragOverDay(null);
+                setDraggedTaskId(null);
+                if (!taskId) return;
+
+                const targetTask = tasks.find((item) => item.id === taskId);
+                if (targetTask && targetTask.date !== dayStr) {
+                  update.mutate(
+                    { id: taskId, patch: { date: dayStr } },
+                    {
+                      onSuccess: () => {
+                        toast.success(
+                          `Moved "${targetTask.title}" to ${d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`
+                        );
+                      },
+                    }
+                  );
+                }
+              }}
+              className={cn(
+                "transition-all duration-200",
+                isToday && "border-primary",
+                isOver && "ring-2 ring-primary bg-primary/5 border-primary shadow-lg scale-[1.01]"
+              )}
+            >
               <CardHeader className="flex flex-row items-center justify-between pb-3">
                 <div>
                   <CardTitle className="text-sm font-semibold">
@@ -237,10 +283,42 @@ function Planner() {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-2">
-                {list.length === 0 && <p className="text-xs text-muted-foreground">No tasks.</p>}
+                {list.length === 0 && (
+                  <div
+                    className={cn(
+                      "p-3 rounded-lg border border-dashed text-center transition-colors",
+                      isOver
+                        ? "border-primary bg-primary/10 text-primary font-medium"
+                        : "border-border/60 text-muted-foreground"
+                    )}
+                  >
+                    <p className="text-xs">
+                      {isOver ? "Drop task here" : "No tasks."}
+                    </p>
+                  </div>
+                )}
                 {list.slice(0, 3).map((t) => (
-                  <div key={t.id} className="group rounded-lg border p-2 text-sm">
+                  <div
+                    key={t.id}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("text/plain", t.id);
+                      e.dataTransfer.effectAllowed = "move";
+                      setDraggedTaskId(t.id);
+                    }}
+                    onDragEnd={() => {
+                      setDraggedTaskId(null);
+                      setDragOverDay(null);
+                    }}
+                    className={cn(
+                      "group rounded-lg border p-2 text-sm transition-all cursor-grab active:cursor-grabbing hover:border-primary/50",
+                      draggedTaskId === t.id && "opacity-40 scale-95 border-dashed border-primary"
+                    )}
+                  >
                     <div className="flex items-start gap-2">
+                      <div className="pt-0.5 opacity-30 group-hover:opacity-100 transition-opacity cursor-grab">
+                        <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
                       <button
                         onClick={() => {
                           if (t.status === "completed") {

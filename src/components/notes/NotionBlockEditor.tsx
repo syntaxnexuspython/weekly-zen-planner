@@ -132,6 +132,67 @@ export const NotionBlockEditor: React.FC<NotionBlockEditorProps> = ({
   }, [initialBlocks, focusTarget]);
 
   const handleBlockChange = (index: number, content: string) => {
+    const currentBlock = initialBlocks[index];
+
+    // Markdown Shortcut Triggers (primarily for paragraph blocks)
+    if (currentBlock.type === "paragraph") {
+      if (content.startsWith("### ")) {
+        const remaining = content.slice(4);
+        handleTypeChange(index, "heading3", remaining);
+        return;
+      }
+      if (content.startsWith("## ")) {
+        const remaining = content.slice(3);
+        handleTypeChange(index, "heading2", remaining);
+        return;
+      }
+      if (content.startsWith("# ")) {
+        const remaining = content.slice(2);
+        handleTypeChange(index, "heading1", remaining);
+        return;
+      }
+      if (content.startsWith("- ") || content.startsWith("* ")) {
+        const remaining = content.slice(2);
+        handleTypeChange(index, "bullet", remaining);
+        return;
+      }
+      if (content.startsWith("1. ")) {
+        const remaining = content.slice(3);
+        handleTypeChange(index, "numbered", remaining);
+        return;
+      }
+      if (content.startsWith("[] ") || content.startsWith("[ ] ")) {
+        const prefixLen = content.startsWith("[ ] ") ? 4 : 3;
+        const remaining = content.slice(prefixLen);
+        handleTypeChange(index, "todo", remaining, false);
+        return;
+      }
+      if (content.startsWith("[x] ")) {
+        const remaining = content.slice(4);
+        handleTypeChange(index, "todo", remaining, true);
+        return;
+      }
+      if (content.startsWith("> ")) {
+        const remaining = content.slice(2);
+        handleTypeChange(index, "callout", remaining);
+        return;
+      }
+      if (content.startsWith("```")) {
+        const remaining = content.slice(3).trimStart();
+        handleTypeChange(index, "code", remaining);
+        return;
+      }
+      if (content === "---") {
+        const updated = [...initialBlocks];
+        const newParaId = "b_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6);
+        updated[index] = { ...updated[index], type: "divider", content: "" };
+        updated.splice(index + 1, 0, { id: newParaId, type: "paragraph", content: "" });
+        onChange(updated);
+        setFocusTarget({ id: newParaId, cursorPos: 0 });
+        return;
+      }
+    }
+
     const updated = [...initialBlocks];
     updated[index] = { ...updated[index], content };
 
@@ -153,9 +214,15 @@ export const NotionBlockEditor: React.FC<NotionBlockEditorProps> = ({
     onChange(updated);
   };
 
-  const handleTypeChange = (index: number, newType: NoteBlockType) => {
+  const handleTypeChange = (
+    index: number,
+    newType: NoteBlockType,
+    customContent?: string,
+    customChecked?: boolean
+  ) => {
     const updated = [...initialBlocks];
-    let content = updated[index].content;
+    let content =
+      customContent !== undefined ? customContent : updated[index].content;
 
     // Clean up ending slash if present
     if (content.endsWith("/")) {
@@ -167,7 +234,12 @@ export const NotionBlockEditor: React.FC<NotionBlockEditorProps> = ({
       ...updated[index],
       type: newType,
       content,
-      checked: newType === "todo" ? false : undefined,
+      checked:
+        newType === "todo"
+          ? customChecked !== undefined
+            ? customChecked
+            : false
+          : undefined,
     };
     setActiveSlashIndex(null);
     onChange(updated);
