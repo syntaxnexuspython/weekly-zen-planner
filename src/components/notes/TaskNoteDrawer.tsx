@@ -15,6 +15,8 @@ import { addXP } from "@/lib/gamification";
 import { toast } from "sonner";
 
 
+import { CategorySelector } from "./CategorySelector";
+
 interface TaskNoteDrawerProps {
   taskId: string | null;
   taskTitle?: string;
@@ -31,6 +33,7 @@ export const TaskNoteDrawer: React.FC<TaskNoteDrawerProps> = ({
   const [note, setNote] = useState<Note | null>(null);
   const [title, setTitle] = useState<string>("");
   const [blocks, setBlocks] = useState<NoteBlock[]>([]);
+  const [category, setCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [isOffline, setIsOffline] = useState<boolean>(false);
@@ -56,11 +59,13 @@ export const TaskNoteDrawer: React.FC<TaskNoteDrawerProps> = ({
       setNote(existing);
       setTitle(existing.title || `Notes: ${taskTitle}`);
       setBlocks(existing.blocks || []);
+      setCategory(existing.category || null);
     } else {
       // Create fresh note state for this task
       setNote(null);
       setTitle(`Notes: ${taskTitle}`);
       setBlocks([{ id: "b_init", type: "paragraph", content: "" }]);
+      setCategory(null);
     }
 
     setLoading(false);
@@ -81,6 +86,7 @@ export const TaskNoteDrawer: React.FC<TaskNoteDrawerProps> = ({
       const res = await notesApi.updateNote(note.id, {
         title,
         blocks,
+        category,
       });
 
       if (res.isOffline) {
@@ -96,6 +102,7 @@ export const TaskNoteDrawer: React.FC<TaskNoteDrawerProps> = ({
       const res = await notesApi.createNote({
         title,
         blocks,
+        category,
         entity_type: "task",
         entity_id: taskId,
       });
@@ -109,7 +116,6 @@ export const TaskNoteDrawer: React.FC<TaskNoteDrawerProps> = ({
         toast.success("Note created! (+25 XP 🎉)");
       }
     }
-
 
     setSaving(false);
   };
@@ -132,6 +138,12 @@ export const TaskNoteDrawer: React.FC<TaskNoteDrawerProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            <CategorySelector
+              value={category}
+              onChange={(newCat) => setCategory(newCat)}
+              disabled={isOffline || loading}
+              size="sm"
+            />
             <Button
               size="sm"
               onClick={handleSave}

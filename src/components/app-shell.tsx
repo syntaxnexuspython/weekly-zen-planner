@@ -16,6 +16,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { type ReactNode, useEffect, useState, useMemo } from "react";
+import { BrandLogo } from "./brand-logo";
 import { ChatbotAssistant } from "./chatbot-assistant";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -227,7 +228,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 md:py-3">
           {/* Logo & Brand */}
           <div
-            className="flex items-center gap-2 font-semibold cursor-pointer select-none"
+            className="cursor-pointer"
             onClick={() => {
               if (isAdmin) {
                 navigate({ to: "/admin" });
@@ -236,8 +237,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               }
             }}
           >
-            <img src="/logo.png" alt="Zen Planner" className="h-5 w-5" />
-            <span className="tracking-tight">Zen Planner</span>
+            <BrandLogo size="sm" />
           </div>
 
           {/* Desktop Search & Navigation */}

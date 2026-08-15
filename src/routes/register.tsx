@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/register")({
@@ -151,10 +151,8 @@ function RegisterPage() {
     <div className="flex min-h-[80vh] items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <div className="mb-2 flex items-center gap-2 text-primary">
-            {/* <Calendar className="h-6 w-6" /> */}
-            <img src="/logo.png" alt="Zen Planner" className="h-5 w-5" />
-            <span className="font-semibold">Weekly Planner</span>
+          <div className="mb-2">
+            <BrandLogo size="md" />
           </div>
           <CardTitle>{step === "details" ? "Create account" : "Verify your email"}</CardTitle>
           {step === "otp" && (

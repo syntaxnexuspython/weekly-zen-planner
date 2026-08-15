@@ -50,6 +50,7 @@ export const notesApi = {
   async getNotes(params?: {
     entity_type?: string;
     entity_id?: string;
+    category?: string;
     standalone_only?: boolean;
     search?: string;
     include_archived?: boolean;
@@ -118,6 +119,76 @@ export const notesApi = {
       return { data: true, isOffline: false };
     } catch (err: any) {
       console.warn(`Note Taker API failed to delete note ${noteId}:`, err.message);
+      return {
+        data: false,
+        isOffline: true,
+        error: err.response?.data?.detail || "Notes service unreachable",
+      };
+    }
+  },
+
+  // CATEGORY ENDPOINTS (Dedicated NoteCategory Document in MongoDB)
+  async getCategories(): Promise<NotesFetchResult<any[]>> {
+    try {
+      const response = await notesClient.get<any[]>("/categories");
+      return { data: response.data, isOffline: false };
+    } catch (err: any) {
+      console.warn("Note Taker API failed to fetch categories:", err.message);
+      return {
+        data: [],
+        isOffline: true,
+        error: err.response?.data?.detail || "Notes service unreachable",
+      };
+    }
+  },
+
+  async createCategory(payload: {
+    name: string;
+    color?: string;
+    icon?: string;
+    description?: string;
+  }): Promise<NotesFetchResult<any | null>> {
+    try {
+      const response = await notesClient.post<any>("/categories", payload);
+      return { data: response.data, isOffline: false };
+    } catch (err: any) {
+      console.warn("Note Taker API failed to create category:", err.message);
+      return {
+        data: null,
+        isOffline: true,
+        error: err.response?.data?.detail || "Notes service unreachable",
+      };
+    }
+  },
+
+  async updateCategory(
+    categoryId: string,
+    payload: {
+      name?: string;
+      color?: string;
+      icon?: string;
+      description?: string;
+    }
+  ): Promise<NotesFetchResult<any | null>> {
+    try {
+      const response = await notesClient.put<any>(`/categories/${categoryId}`, payload);
+      return { data: response.data, isOffline: false };
+    } catch (err: any) {
+      console.warn(`Note Taker API failed to update category ${categoryId}:`, err.message);
+      return {
+        data: null,
+        isOffline: true,
+        error: err.response?.data?.detail || "Notes service unreachable",
+      };
+    }
+  },
+
+  async deleteCategory(categoryId: string): Promise<NotesFetchResult<boolean>> {
+    try {
+      await notesClient.delete(`/categories/${categoryId}`);
+      return { data: true, isOffline: false };
+    } catch (err: any) {
+      console.warn(`Note Taker API failed to delete category ${categoryId}:`, err.message);
       return {
         data: false,
         isOffline: true,

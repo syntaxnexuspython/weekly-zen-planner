@@ -186,6 +186,15 @@ export interface NoteBlock {
   language?: string; // For code blocks
 }
 
+export interface NoteCategory {
+  id: string;
+  name: string;
+  color: string; // Tailwind color class or hex, e.g. "indigo", "emerald", "amber"
+  icon: string; // Icon identifier e.g. "sparkles", "languages", "code", "briefcase", "brain", "lightbulb"
+  description?: string;
+  isDefault?: boolean;
+}
+
 export interface Note {
   id: string;
   user_id: string;
@@ -193,6 +202,7 @@ export interface Note {
   blocks: NoteBlock[];
   entity_type?: string | null;
   entity_id?: string | null;
+  category?: string | null;
   tags: string[];
   is_pinned: boolean;
   is_archived: boolean;
@@ -205,6 +215,7 @@ export interface NoteCreatePayload {
   blocks?: NoteBlock[];
   entity_type?: string | null;
   entity_id?: string | null;
+  category?: string | null;
   tags?: string[];
   is_pinned?: boolean;
 }
@@ -214,6 +225,7 @@ export interface NoteUpdatePayload {
   blocks?: NoteBlock[];
   entity_type?: string | null;
   entity_id?: string | null;
+  category?: string | null;
   tags?: string[];
   is_pinned?: boolean;
   is_archived?: boolean;
