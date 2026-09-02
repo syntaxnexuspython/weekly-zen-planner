@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { ApiResponse, AuthSession, Task, User, WeeklyStats, Motivation, Reward, UserStreak, StreakDayStatus, StreakRule, ChatMessage, ChatReply, Feedback, FeedbackType, FeedbackStatus, Announcement, GmailStatus, ImportantEmailItem } from "@/types";
+import type { ApiResponse, AuthSession, Task, User, WeeklyStats, Motivation, Reward, UserStreak, StreakDayStatus, StreakRule, ChatMessage, ChatReply, Feedback, FeedbackType, FeedbackStatus, Announcement, GmailStatus, ImportantEmailItem, GmailMessageItem } from "@/types";
 import { mockDb } from "./mock-db";
 
 const client = axios.create({
@@ -1192,7 +1192,7 @@ export const api = {
     }
   },
 
-  async getImportantGmailToday(): Promise<ImportantEmailItem[]> {
+  async getImportantGmailToday(): Promise<ImportantEmailItem, GmailMessageItem[]> {
     try {
       const response = await client.get("/api/v1/gmail/important-today");
       return response.data.data;

@@ -248,4 +248,14 @@ export interface ImportantEmailItem {
   suggested_task_description: string;
   suggested_start_time: string;
   suggested_end_time: string;
-}
+}
+
+export interface GmailMessageItem {
+  id: string;
+  sender: string;
+  subject: string;
+  snippet: string;
+  date: string;
+  is_unread?: boolean;
+  labels?: string[];
+}

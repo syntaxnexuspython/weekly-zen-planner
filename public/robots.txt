@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://weekly-zen-planner.jotech.in/sitemap.xml
