@@ -1192,9 +1192,20 @@ export const api = {
     }
   },
 
-  async getImportantGmailToday(): Promise<ImportantEmailItem, GmailMessageItem[]> {
+  async getImportantGmailToday(): Promise<ImportantEmailItem[]> {
     try {
       const response = await client.get("/api/v1/gmail/important-today");
+      return response.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
+  async getAllGmailMessages(maxResults?: number): Promise<GmailMessageItem[]> {
+    try {
+      const response = await client.get("/api/v1/gmail/all-messages", {
+        params: maxResults ? { max_results: maxResults } : undefined,
+      });
       return response.data.data;
     } catch (e: any) {
       throw new Error(e.response?.data?.message || e.message);
