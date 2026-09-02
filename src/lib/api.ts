@@ -1212,6 +1212,15 @@ export const api = {
     }
   },
 
+  async getGmailMessageDetail(messageId: string): Promise<GmailMessageItem> {
+    try {
+      const response = await client.get(`/api/v1/gmail/message/${messageId}`);
+      return response.data.data;
+    } catch (e: any) {
+      throw new Error(e.response?.data?.message || e.message);
+    }
+  },
+
   async convertGmailToTask(item: {
     title: string;
     description?: string;

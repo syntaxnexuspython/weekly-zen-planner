@@ -242,6 +242,7 @@ export interface ImportantEmailItem {
   sender: string;
   subject: string;
   snippet: string;
+  body?: string;
   date: string;
   urgency: "high" | "medium" | "low";
   suggested_task_title: string;
@@ -255,6 +256,7 @@ export interface GmailMessageItem {
   sender: string;
   subject: string;
   snippet: string;
+  body?: string;
   date: string;
   is_unread?: boolean;
   labels?: string[];
