@@ -238,7 +238,7 @@ export function FeedbackDialog({
                     type="submit"
                     size="sm"
                     disabled={isSubmitting}
-                    className="bg-primary hover:bg-primary/95 text-white font-semibold cursor-pointer shadow-sm text-xs gap-1.5"
+                    className="bg-primary hover:bg-primary/95 text-black font-bold cursor-pointer shadow-sm text-xs gap-1.5"
                   >
                     <Sparkles className="h-3.5 w-3.5" />
                     {isSubmitting ? "Processing AI..." : "Submit with AI"}
