@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { ApiResponse, AuthSession, Task, User, WeeklyStats, Motivation, Reward, UserStreak, StreakDayStatus, StreakRule, ChatMessage, ChatReply, Feedback, FeedbackType, FeedbackStatus, Announcement, GmailStatus, ImportantEmailItem, GmailMessageItem } from "@/types";
+import type { ApiResponse, AuthSession, Task, User, WeeklyStats, Motivation, Reward, UserStreak, StreakDayStatus, StreakRule, ChatMessage, ChatReply, Feedback, FeedbackType, FeedbackStatus, FeedbackStats, FeedbackAIProviderStatus, Announcement, GmailStatus, ImportantEmailItem, GmailMessageItem } from "@/types";
 import { mockDb } from "./mock-db";
 
 const client = axios.create({
@@ -897,10 +897,32 @@ export const api = {
     return payload.data;
   },
 
-  async adminUpdateFeedbackStatus(id: string, status: FeedbackStatus, adminNotes?: string): Promise<Feedback> {
+  async getMyFeedback(): Promise<Feedback[]> {
     let response;
     try {
-      response = await client.patch(`/api/v1/feedback/admin/${id}/status`, { status, admin_notes: adminNotes });
+      response = await client.get("/api/v1/feedback/my");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Feedback[]>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to fetch feedback history");
+    }
+    return payload.data;
+  },
+
+  async adminUpdateFeedbackStatus(id: string, status: FeedbackStatus, adminNotes?: string, adminSolution?: string): Promise<Feedback> {
+    let response;
+    try {
+      response = await client.patch(`/api/v1/feedback/admin/${id}/status`, {
+        status,
+        admin_notes: adminNotes,
+        admin_solution: adminSolution,
+      });
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const message = (error.response?.data as { message?: string } | undefined)?.message;
@@ -911,6 +933,78 @@ export const api = {
     const payload = response.data as ApiResponse<Feedback>;
     if (payload.status !== "success") {
       throw new Error(payload.message || "Failed to update feedback status");
+    }
+    return payload.data;
+  },
+
+  async adminReanalyzeFeedback(id: string): Promise<Feedback> {
+    let response;
+    try {
+      response = await client.post(`/api/v1/feedback/admin/${id}/reanalyze`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<Feedback>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to reanalyze feedback");
+    }
+    return payload.data;
+  },
+
+  async adminGetFeedbackStats(): Promise<FeedbackStats> {
+    let response;
+    try {
+      response = await client.get("/api/v1/feedback/admin/stats");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<FeedbackStats>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to fetch feedback stats");
+    }
+    return payload.data;
+  },
+
+  async adminGetFeedbackProvider(): Promise<FeedbackAIProviderStatus> {
+    let response;
+    try {
+      response = await client.get("/api/v1/feedback/admin/provider");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<FeedbackAIProviderStatus>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to fetch feedback provider");
+    }
+    return payload.data;
+  },
+
+  async adminSetFeedbackProvider(provider: string): Promise<FeedbackAIProviderStatus> {
+    let response;
+    try {
+      response = await client.patch("/api/v1/feedback/admin/provider", { provider });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = (error.response?.data as { message?: string } | undefined)?.message;
+        throw new Error(message || error.message);
+      }
+      throw error;
+    }
+    const payload = response.data as ApiResponse<FeedbackAIProviderStatus>;
+    if (payload.status !== "success") {
+      throw new Error(payload.message || "Failed to set feedback provider");
     }
     return payload.data;
   },

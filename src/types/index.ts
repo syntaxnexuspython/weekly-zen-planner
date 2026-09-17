@@ -154,7 +154,33 @@ export interface Feedback {
   content: string;
   status: FeedbackStatus;
   admin_notes: string | null;
+  is_critical?: boolean;
+  severity?: 'critical' | 'high' | 'medium' | 'low';
+  sentiment?: 'positive' | 'neutral' | 'negative' | 'critical';
+  ai_analysis?: string | null;
+  ai_reply?: string | null;
+  ai_suggested_solution?: string | null;
+  admin_solution?: string | null;
+  resolved_at?: string | null;
   createdAt: string;
+  updatedAt?: string | null;
+}
+
+export interface FeedbackStats {
+  total: number;
+  pending: number;
+  in_progress: number;
+  resolved: number;
+  critical_unresolved: number;
+  positive_count: number;
+  critical_count: number;
+}
+
+export interface FeedbackAIProviderStatus {
+  current_provider: string;
+  available_providers: Array<{ id: string; name: string; configured: boolean }>;
+  groq_configured: boolean;
+  gemini_configured: boolean;
 }
 
 export interface Announcement {

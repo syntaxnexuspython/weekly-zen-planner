@@ -1,6 +1,8 @@
 import { createFileRoute, Outlet, Link } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/require-auth";
-import { Shield, Users, Flame, Sparkles, Menu, X, MessageSquare, Megaphone, ShieldAlert } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { Shield, Users, Flame, Sparkles, Menu, X, MessageSquare, Megaphone, ShieldAlert, Bot } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -14,6 +16,12 @@ export const Route = createFileRoute("/admin")({
 
 function AdminLayout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  const { data: stats } = useQuery({
+    queryKey: ["admin-feedback-stats"],
+    queryFn: api.adminGetFeedbackStats,
+    refetchInterval: 30000,
+  });
 
   const navLinks = [
     {
@@ -44,8 +52,8 @@ function AdminLayout() {
     },
     {
       to: "/admin/feedback",
-      label: "User Feedback",
-      icon: <MessageSquare className="h-4 w-4 text-rose-500" />,
+      label: "AI Feedback Agent",
+      icon: <Bot className="h-4 w-4 text-indigo-500" />,
     },
     {
       to: "/admin/announcements",
@@ -113,12 +121,25 @@ function AdminLayout() {
                 to={link.to}
                 activeProps={{ className: "bg-secondary text-secondary-foreground font-semibold" }}
                 inactiveProps={{ className: "hover:bg-accent hover:text-accent-foreground text-muted-foreground" }}
-                className="w-full inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer"
+                className="w-full inline-flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors cursor-pointer"
                 activeOptions={link.exact ? { exact: true } : undefined}
                 onClick={() => setIsMobileOpen(false)}
               >
-                {link.icon}
-                {link.label}
+                <div className="flex items-center gap-2">
+                  {link.icon}
+                  <span>{link.label}</span>
+                </div>
+                {link.to === "/admin/feedback" && stats && (stats.critical_unresolved > 0 || stats.pending > 0) && (
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      stats.critical_unresolved > 0
+                        ? "bg-rose-500 text-white animate-pulse"
+                        : "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400"
+                    }`}
+                  >
+                    {stats.critical_unresolved > 0 ? `${stats.critical_unresolved} Alert` : stats.pending}
+                  </span>
+                )}
               </Link>
             ))}
           </nav>
