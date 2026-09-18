@@ -60,7 +60,7 @@ export function GmailImportantCard() {
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   // Fetch Gmail status
-  const { data: status, refetch: refetchStatus } = useQuery({
+  const { data: status, refetch: refetchStatus, isLoading: isLoadingStatus } = useQuery({
     queryKey: ["gmailStatus"],
     queryFn: api.getGmailStatus,
   });
@@ -73,7 +73,7 @@ export function GmailImportantCard() {
   } = useQuery({
     queryKey: ["importantGmailToday"],
     queryFn: api.getImportantGmailToday,
-    enabled: !!status?.connected,
+    enabled: !!status?.connected && !!status?.feature_enabled,
   });
 
   // Fetch all recent inbox emails
@@ -84,7 +84,7 @@ export function GmailImportantCard() {
   } = useQuery({
     queryKey: ["allGmailMessages"],
     queryFn: () => api.getAllGmailMessages(),
-    enabled: !!status?.connected,
+    enabled: !!status?.connected && !!status?.feature_enabled,
   });
 
   // Connect Gmail handler
@@ -231,6 +231,11 @@ export function GmailImportantCard() {
     );
   });
 
+  // Hide completely if disabled by administrator or still loading status
+  if (isLoadingStatus || !status?.feature_enabled) {
+    return null;
+  }
+
   return (
     <Card className="w-full overflow-hidden border-indigo-500/20 bg-gradient-to-br from-indigo-500/[0.03] via-background to-purple-500/[0.03]">
       <CardHeader className="pb-3 flex flex-row items-center justify-between gap-4 flex-wrap">
@@ -287,21 +292,8 @@ export function GmailImportantCard() {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Feature disabled by Admin notice */}
-        {status?.feature_enabled === false && (
-          <div className="p-4 rounded-lg border border-amber-500/30 bg-amber-500/10 flex items-center gap-3 text-xs text-amber-700 dark:text-amber-400">
-            <AlertCircle className="h-5 w-5 shrink-0 text-amber-600" />
-            <div>
-              <span className="font-bold">Feature Disabled by Administrator</span>
-              <p className="text-muted-foreground mt-0.5">
-                The Gmail + Groq AI integration is currently turned off system-wide by your administrator.
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Connection status banner */}
-        {status?.feature_enabled !== false && !status?.connected && (
+        {!status?.connected && (
           <div className="p-4 rounded-lg border border-indigo-500/20 bg-indigo-500/5 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <ShieldCheck className="h-5 w-5 text-indigo-500 shrink-0" />

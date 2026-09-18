@@ -142,7 +142,7 @@ export interface ChatReply {
 
 export type FeedbackType = "contact" | "report" | "suggestion" | "appreciation" | "feedback";
 
-export type FeedbackStatus = "pending" | "in_progress" | "resolved";
+export type FeedbackStatus = "pending" | "in_progress" | "resolved" | "acknowledged";
 
 export interface Feedback {
   id: string;
@@ -286,4 +286,83 @@ export interface GmailMessageItem {
   date: string;
   is_unread?: boolean;
   labels?: string[];
+}
+
+// ── Investigation Types ─────────────────────────────────────────────────────
+
+export type InvestigationStatus =
+  | "received"
+  | "analysing"
+  | "investigating"
+  | "diagnosis_ready"
+  | "awaiting_approval"
+  | "resolved"
+  | "failed"
+  | "cancelled";
+
+export interface ToolExecutionRecord {
+  tool_name: string;
+  input_summary: string;
+  output_summary: string;
+  executed_at: string;
+  duration_ms: number;
+  success: boolean;
+  error?: string | null;
+}
+
+export interface InvestigationEvidence {
+  source: string;
+  finding: string;
+  confidence: "low" | "medium" | "high";
+  recorded_at: string;
+}
+
+export interface InvestigationDiagnosis {
+  problem_summary: string;
+  confirmed_facts: string[];
+  hypotheses: string[];
+  root_cause?: string | null;
+  root_cause_confidence: string;
+  root_cause_status: "confirmed" | "suspected" | "unknown";
+}
+
+export interface ResolutionProposal {
+  recommended_solution: string;
+  steps: string[];
+  requires_human_review: boolean;
+  proposed_at: string;
+}
+
+export interface Investigation {
+  id: string;
+  feedback_id: string;
+  user_id: string;
+  status: InvestigationStatus;
+  provider: string;
+  model: string;
+  tool_executions: ToolExecutionRecord[];
+  evidence: InvestigationEvidence[];
+  diagnosis?: InvestigationDiagnosis | null;
+  resolution_proposal?: ResolutionProposal | null;
+  iteration_count: number;
+  max_iterations: number;
+  error_message?: string | null;
+  started_at: string;
+  completed_at?: string | null;
+  updated_at: string;
+}
+
+export interface InvestigationSSEUpdate {
+  status: InvestigationStatus;
+  iteration_count: number;
+  tool_executions_count: number;
+  evidence_count: number;
+  has_diagnosis: boolean;
+  has_proposal: boolean;
+  error_message?: string | null;
+  last_tool?: {
+    tool_name: string;
+    success: boolean;
+    output_summary: string;
+  } | null;
 }

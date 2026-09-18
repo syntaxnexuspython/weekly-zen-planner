@@ -1,5 +1,5 @@
-import axios from "axios";
-import type { ApiResponse, AuthSession, Task, User, WeeklyStats, Motivation, Reward, UserStreak, StreakDayStatus, StreakRule, ChatMessage, ChatReply, Feedback, FeedbackType, FeedbackStatus, FeedbackStats, FeedbackAIProviderStatus, Announcement, GmailStatus, ImportantEmailItem, GmailMessageItem } from "@/types";
+﻿import axios from "axios";
+import type { ApiResponse, AuthSession, Task, User, WeeklyStats, Motivation, Reward, UserStreak, StreakDayStatus, StreakRule, ChatMessage, ChatReply, Feedback, FeedbackType, FeedbackStatus, FeedbackStats, FeedbackAIProviderStatus, Announcement, GmailStatus, ImportantEmailItem, GmailMessageItem, Investigation } from "@/types";
 import { mockDb } from "./mock-db";
 
 const client = axios.create({
@@ -1026,6 +1026,50 @@ export const api = {
     }
   },
 
+
+  // ── Investigation API ────────────────────────────────────────────────────
+
+  async getInvestigation(feedbackId: string): Promise<Investigation> {
+    let response: any;
+    try {
+      response = await client.get(`/api/v1/feedback/${feedbackId}/investigation`);
+    } catch (err: any) {
+      response = err?.response;
+    }
+    const payload = response?.data as ApiResponse<Investigation>;
+    if (!payload || payload.status !== "success") {
+      throw new Error(payload?.message || "Failed to fetch investigation");
+    }
+    return payload.data;
+  },
+
+  async triggerInvestigation(feedbackId: string): Promise<{ feedback_id: string }> {
+    let response: any;
+    try {
+      response = await client.post(`/api/v1/feedback/${feedbackId}/investigate`);
+    } catch (err: any) {
+      response = err?.response;
+    }
+    const payload = response?.data as ApiResponse<{ feedback_id: string }>;
+    if (!payload || payload.status !== "success") {
+      throw new Error(payload?.message || "Failed to trigger investigation");
+    }
+    return payload.data;
+  },
+
+  async cancelInvestigation(feedbackId: string): Promise<Investigation> {
+    let response: any;
+    try {
+      response = await client.post(`/api/v1/feedback/${feedbackId}/investigation/cancel`);
+    } catch (err: any) {
+      response = err?.response;
+    }
+    const payload = response?.data as ApiResponse<Investigation>;
+    if (!payload || payload.status !== "success") {
+      throw new Error(payload?.message || "Failed to cancel investigation");
+    }
+    return payload.data;
+  },
   async listActiveAnnouncements(): Promise<Announcement[]> {
     let response;
     try {

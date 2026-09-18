@@ -74,6 +74,7 @@ export function FeedbackDialog({
     pending: "bg-amber-500/10 text-amber-600 border-amber-500/20",
     in_progress: "bg-blue-500/10 text-blue-600 border-blue-500/20",
     resolved: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+    acknowledged: "bg-rose-500/10 text-rose-600 border-rose-500/20",
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -275,14 +276,23 @@ export function FeedbackDialog({
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] uppercase font-bold border ${
-                            statusColors[item.status] || ""
-                          }`}
-                        >
-                          {item.status.replace("_", " ")}
-                        </Badge>
+                        {item.type === "appreciation" ? (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] font-bold border bg-rose-500/10 text-rose-600 border-rose-500/20 flex items-center gap-1"
+                          >
+                            <Heart className="h-3 w-3 fill-rose-500 text-rose-500" /> Appreciated
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] uppercase font-bold border ${
+                              statusColors[item.status] || ""
+                            }`}
+                          >
+                            {item.status.replace("_", " ")}
+                          </Badge>
+                        )}
                         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {new Date(item.createdAt).toLocaleDateString()}
@@ -303,7 +313,7 @@ export function FeedbackDialog({
                         <span className="font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
                           <Sparkles className="h-3.5 w-3.5" /> AI Assistant Response:
                         </span>
-                        <p className="text-muted-foreground leading-relaxed pl-4">
+                        <p className="text-muted-foreground leading-relaxed pl-4 whitespace-pre-wrap">
                           {item.ai_reply}
                         </p>
                       </div>

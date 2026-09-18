@@ -201,6 +201,7 @@ function AdminFeedbackManagement() {
     pending: "bg-red-500/10 text-red-600 border-red-500/20",
     in_progress: "bg-amber-500/10 text-amber-600 border-amber-500/20",
     resolved: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+    acknowledged: "bg-rose-500/10 text-rose-600 border-rose-500/20",
   };
 
   const severityColors = {
@@ -444,12 +445,21 @@ function AdminFeedbackManagement() {
                       })}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={`capitalize text-[10px] font-bold border ${statusColors[item.status]}`}
-                      >
-                        {item.status.replace("_", " ")}
-                      </Badge>
+                      {item.type === "appreciation" ? (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] font-bold border bg-rose-500/10 text-rose-600 border-rose-500/20 flex items-center gap-1 w-fit"
+                        >
+                          <Heart className="h-3 w-3 fill-rose-500 text-rose-500" /> Appreciated
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className={`capitalize text-[10px] font-bold border ${statusColors[item.status]}`}
+                        >
+                          {item.status.replace("_", " ")}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1">
@@ -623,19 +633,26 @@ function AdminFeedbackManagement() {
 
               {/* Status Update & Internal Notes */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t pt-3">
-                <div className="space-y-1">
-                  <Label htmlFor="moderation-status" className="text-xs font-semibold">Workflow Status</Label>
-                  <Select value={statusVal} onValueChange={(val) => setStatusVal(val as FeedbackStatus)}>
-                    <SelectTrigger id="moderation-status" className="h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="resolved">Resolved (Completed)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {selectedFeedback.type === "appreciation" ? (
+                  <div className="p-2.5 rounded-lg border border-rose-500/20 bg-rose-500/5 text-xs text-rose-600 dark:text-rose-400 flex items-center gap-2 font-medium">
+                    <Heart className="h-4 w-4 fill-rose-500 text-rose-500 shrink-0" />
+                    <span>User Appreciation — Auto-acknowledged. No ticket workflow needed.</span>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <Label htmlFor="moderation-status" className="text-xs font-semibold">Workflow Status</Label>
+                    <Select value={statusVal} onValueChange={(val) => setStatusVal(val as FeedbackStatus)}>
+                      <SelectTrigger id="moderation-status" className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="resolved">Resolved (Completed)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="space-y-1">
                   <Label htmlFor="admin-notes" className="text-xs font-semibold">Internal Admin Notes</Label>
